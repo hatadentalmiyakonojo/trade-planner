@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>スイング戦略バックテスト検証レポート（2026年7月）</title>
+<style>
+:root{ --ink:#1e2a32; --accent:#0e7c86; --line:#dde4e9; --bg:#f4f6f8; --warn:#c0392b; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--ink); line-height:1.85;
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; }
+.wrap{ max-width:820px; margin:0 auto; padding:32px 24px 80px; background:#fff;
+  box-shadow:0 1px 12px rgba(20,40,60,.06); min-height:100vh; }
+h1{ font-size:26px; border-bottom:3px solid var(--accent); padding-bottom:10px; margin:0 0 20px; }
+h2{ font-size:20px; color:var(--accent); margin:34px 0 12px; padding-left:10px; border-left:5px solid var(--accent); }
+h3{ font-size:17px; margin:22px 0 8px; }
+p{ margin:10px 0; font-size:15.5px; }
+ul,ol{ margin:8px 0; padding-left:26px; }
+li{ margin:5px 0; font-size:15.5px; }
+code{ background:#eef2f4; padding:2px 6px; border-radius:5px; font-size:14px;
+  font-family:"SF Mono",Menlo,Consolas,monospace; word-break:break-all; }
+strong{ color:#0a5c64; }
+a{ color:var(--accent); }
+hr{ border:none; border-top:1px solid var(--line); margin:26px 0; }
+blockquote{ margin:12px 0; padding:10px 16px; background:#f0f7f8; border-left:4px solid var(--accent);
+  border-radius:0 8px 8px 0; font-size:15px; }
+table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:14.5px; }
+th,td{ border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top; }
+th{ background:#eaf4f5; }
+tr:nth-child(even) td{ background:#fafcfc; }
+.cb{ font-size:17px; }
+.printbar{ position:sticky; top:0; background:#fff; padding:8px 0 14px; margin:-8px 0 8px;
+  border-bottom:1px solid var(--line); }
+.printbar button{ background:var(--accent); color:#fff; border:none; border-radius:8px;
+  padding:9px 16px; font-size:14px; cursor:pointer; }
+.printbar span{ font-size:12px; color:#5b6b76; margin-left:10px; }
+@media print{ body{ background:#fff; } .wrap{ box-shadow:none; max-width:none; padding:0; } .printbar{ display:none; } }
+</style></head><body><div class="wrap">
+<div class="printbar"><button onclick="window.print()">🖨 印刷 / PDFで保存</button>
+<span>このページは⌘Pで紙にもPDFにもできます</span></div>
+<h1>スイング戦略バックテスト検証レポート（2026年7月）</h1>
+<p>実施日: 2026年7月17日／対象: アプリ「株式トレードプランナー」のスイングモード本番ロジック</p>
+<blockquote>このレポートは、アプリが提案するトレードプラン（フィボナッチ3分割エントリー・逆指値・分割利確）を<br><strong>過去3年の実データで機械的に売買したらどうなっていたか</strong>を検証したものです。<br>将来の成績を保証するものではありません。</blockquote>
+<hr>
+<h2>1. 検証方法</h2>
+<ul>
+<li><strong>ロジック</strong>: アプリ本体（index.html）からZigZag・フィボナッチ・プラン生成エンジンをそのまま抽出して使用（アプリと計算が同一であることを保証）</li>
+<li><strong>対象</strong>: 日経225構成223銘柄＋S&amp;P100構成101銘柄、2023年7月〜2026年7月（約3年・週次スキャン）</li>
+<li><strong>売買ルール</strong>（アプリの想定運用と同じ）:</li>
+<ul>
+<li>条件: 75日線より上・売買代金ゲート・プラン判定が「可」以上（RR≥1.5）・押し目レンジ内</li>
+<li>買い指値3本（フィボ38.2/50/61.8%、コンフルエンスにスナップ）を15営業日有効で発注</li>
+<li>損切り: フィボ78.6%割れの逆指値（全量）</li>
+<li>利確: T1（直近高値）で50%→T2（127.2%）で30%→残り20%はトレーリング（25日線割れ or 高値−2.5×ATR）</li>
+<li>最大保有40営業日で手仕舞い。手数料は往復0.1%控除</li>
+</ul>
+<li><strong>保守的な取り決め</strong>: 同じ日に約定と損切りが両方成立し得る場合は損切り優先／窓開けは不利な寄り値で約定／株式分割の前後（未調整データの汚染源）はシグナル除外</li>
+<li><strong>成績の単位「R」</strong>: 1トレードの当初リスク額（買値−損切り幅×株数）を1Rとした損益倍率。リスク1%運用なら「+0.2R＝資金の+0.2%」</li>
+</ul>
+<h2>2. 総合成績（本番ルール＝バリアントA）</h2>
+<table><thead><tr><th>指標</th><th>結果</th></tr></thead><tbody>
+<tr><td>トレード数</td><td>1,607回（シグナル2,643件中、押し目が来ず未約定976件）</td></tr>
+<tr><td>勝率</td><td>51.0%</td></tr>
+<tr><td>平均損益</td><td><strong>+0.198R/回</strong>（外れ値上下1%を除いても+0.132R）</td></tr>
+<tr><td>平均利益/平均損失</td><td>+1.40R / −1.05R</td></tr>
+<tr><td>プロフィットファクター</td><td>1.39</td></tr>
+<tr><td>累計</td><td>+318R</td></tr>
+<tr><td>最大ドローダウン</td><td>71R</td></tr>
+<tr><td>月次成績</td><td>31ヶ月中プラス22ヶ月（最悪月: 2025年4月 −55R、最良月: 2026年5月 +66R）</td></tr>
+<tr><td>平均保有</td><td>18.5営業日（約3.7週）</td></tr>
+</tbody></table>
+<p><strong>年別（すべてプラス）</strong>: 2024年 +0.09R/回 → 2025年 +0.24R/回 → 2026年 +0.31R/回</p>
+<p><strong>市場別</strong>: 日本株 +0.24R/回（1,150回）／米国株 +0.10R/回（457回）</p>
+<blockquote>💡 <strong>意味</strong>: リスク1%運用で年間50トレードなら、期待値ベースで年+10%前後（+0.2R×50回）。<br>ただし後述の注意点（強気相場のデータ・約定の楽観仮定）を踏まえ、実運用ではこれより低めに見積もるべきです。</blockquote>
+<h2>3. 出口別の内訳 — 利益の源泉はどこか</h2>
+<table><thead><tr><th>出口</th><th>割合</th><th>平均損益</th><th>読み方</th></tr></thead><tbody>
+<tr><td>損切り（78.6%割れ）</td><td>52%</td><td>−0.93R</td><td>半分は負ける。1回の負けは約1Rに収まっている＝損切りが機能</td></tr>
+<tr><td>トレーリング利確</td><td>30%</td><td><strong>+1.75R</strong></td><td><strong>利益のほぼ全てはここ</strong>。伸びた銘柄を引っ張れるかが生命線</td></tr>
+<tr><td>40日タイムアウト</td><td>18%</td><td>+0.90R</td><td>時間切れ手仕舞いも平均プラス＝「ダラダラ持たない」は正解</td></tr>
+</tbody></table>
+<h2>4. 最重要の発見: 「何本目まで刺さったか」で運命が分かれる</h2>
+<table><thead><tr><th>約定スライス数</th><th>件数</th><th>勝率</th><th>平均損益</th></tr></thead><tbody>
+<tr><td>1本のみ（38.2%で反発）</td><td>409</td><td><strong>79%</strong></td><td><strong>+0.67R</strong></td></tr>
+<tr><td>2本（50%まで押した）</td><td>477</td><td>56%</td><td>+0.45R</td></tr>
+<tr><td>3本全部（61.8%まで押した）</td><td>721</td><td><strong>32%</strong></td><td><strong>−0.24R</strong></td></tr>
+</tbody></table>
+<p>浅い押しで反発する銘柄は強く、<strong>3本目まで刺さる深い押しはトレンド転換のサインであることが多い</strong>という明確な結果です。</p>
+<p><strong>では3本目を最初から置かなければ良いのでは？→ 検証したら逆に悪化</strong>（バリアントD: 勝率43%・平均+0.14R・PF1.22）。</p>
+<p>3本目は「深押し時に取得単価を下げるクッション」として全体成績を支えていました。<strong>3分割の設計自体は正しい</strong>です。</p>
+<p><strong>実戦への示唆</strong>: 3本目が約定したら「含み損の我慢比べ」ではなく警戒モードへ。数日以内に反発しなければ、逆指値を待たず撤退するのが統計的には有利（この注意書きをアプリのプラン画面に追加済み）。</p>
+<h2>5. その他の検証結果</h2>
+<ul>
+<li><strong>セクターゲートの効果</strong>: セクター強度条件を外すと（バリアントB）トレード数は約2倍・1回あたり成績はほぼ同等（+0.23R）でした。セクター分析の価値は「1回の質を上げる」よりも<strong>監視銘柄を半分に絞って見落としと手間を減らす</strong>ことにあります。</li>
+<li><strong>「見送り推奨」（RR&lt;1.5）は本当にダメか</strong>: 見送り判定のトレードだけを敢えて売買すると平均+0.24R・勝率59%（バリアントC）。<strong>過去3年では見送り組も悪くなかった</strong>のが正直な結果です。ただし1回の利幅が小さく手数料・スリッページに弱いため、判定は「絞り込みの目安」として維持しています。</li>
+<li><strong>逆指値でも損失は−1Rでは止まらない</strong>: 最悪トレードは−4.1R（米LRCX、決算で窓開け）。<strong>逆指値は万能ではなく、決算またぎが最大の敵</strong>です（→今後の改善候補: 決算日警告）。</li>
+<li><strong>異常に大きい勝ち（+60R等）</strong>: 寄り付きの窓で買値と損切りが極端に近くなったケース。計算上は正しいものの実運用では再現しにくいため、期待値はトリム後の<strong>+0.13R/回を基準に</strong>考えてください。</li>
+</ul>
+<h2>6. 検証の限界（正直な注意書き）</h2>
+<ol>
+<li><strong>強気相場のデータ</strong>: この3年は日経平均が33,000→68,000円へ上昇した歴史的強気相場。下落相場での成績は未検証です（75日線ゲートである程度は自動回避される設計）。</li>
+<li><strong>現在の指数構成銘柄で検証</strong>: 3年前に弱くて除外された銘柄が入っていない＝成績が上振れする「生存者バイアス」があります。</li>
+<li><strong>約定の仮定が楽観的</strong>: 指値に価格が触れたら全量約定と仮定（実際は板の状況次第）。スリッページは未考慮（手数料0.1%のみ控除）。</li>
+<li><strong>同時ポジション数</strong>: 全シグナルを取ると平均49・最大78銘柄の同時保有が必要でした。実際の資金では取れるトレードを選ぶことになり、累計+318Rをそのまま実現はできません。<strong>信頼できる数字は「1回あたり+0.13〜0.2R」</strong>です。</li>
+<li>配当・貸株料・税は未考慮。</li>
+</ol>
+<h2>7. 結論</h2>
+<ul>
+<li>アプリのプラン（フィボ3分割＋78.6%逆指値＋分割利確＋トレーリング）は、過去3年・1,600回超の機械的売買で<strong>一貫してプラスの期待値</strong>（勝率51%・PF1.39・全年度プラス）を示した。</li>
+<li>勝率は約5割にすぎず、<strong>利益はトレーリングで伸ばした3割のトレードから生まれる</strong>。「損切りは浅く機械的に、利は伸ばす」というアプリの設計思想どおりに運用できるかが成否を分ける。</li>
+<li>数字はあくまで過去の検証。<strong>リスク1%ルールと逆指値の徹底</strong>が、この期待値を現実の口座で受け取るための前提条件です。</li>
+</ul>
+<hr>
+<p>*検証スクリプトはアプリ本体からロジックを自動抽出しており、アプリの計算式と完全に同一です。本レポートは投資助言ではありません。*</p>
+</div></body></html>

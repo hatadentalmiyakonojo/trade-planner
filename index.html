@@ -1026,6 +1026,9 @@ const PlanEngine = {
       warnings.push('損切り幅がATRの4倍を超えています（ボラティリティ過大）。代替案: ' + Fmt.price(slAlt, mkt) + '（平均取得単価−3×ATR）も検討。');
     }
     if (cNow <= sl) return { error: '現在値がすでに逆指値水準を下回っています。このスイングでのプランは無効です。', pivots, swing, fib };
+    if (eavg - sl < 1.0 * atr) {
+      warnings.push('損切り幅がATR1倍未満と極端に狭いプランです。寄り付きの窓・スリッページで想定を超える損失になりやすいため、数量を控えめにするか見送りを検討してください。');
+    }
 
     // 利確ターゲット
     const t1 = Tick.floor(H.price, mkt);
@@ -1926,7 +1929,8 @@ function renderPlanArea(plan) {
         <button class="btn primary" id="savePlanBtn">💾 プランを保存</button>
         <button class="btn" id="copyPlanBtn">📄 注文票をコピー</button>
       </div>
-      <p class="muted" style="font-size:10.5px;margin-top:8px">※計算例であり売買の推奨ではありません。呼値の単位・単元・手数料は証券会社の実際の条件をご確認ください。</p>
+      <p class="muted" style="font-size:10.5px;margin-top:8px">※計算例であり売買の推奨ではありません。呼値の単位・単元・手数料は証券会社の実際の条件をご確認ください。<br>
+      ※過去3年のバックテスト知見: 3本目（最も深い指値）まで約定した押しはトレンド転換だった比率が高めです（勝率32%）。3本目約定後に数日反発しない場合は、逆指値を待たずに撤退するのも有効です。</p>
     </div>`;
   document.getElementById('savePlanBtn').addEventListener('click', () => savePlan(plan));
   document.getElementById('copyPlanBtn').addEventListener('click', () => copyOrderTicket(plan));
