@@ -266,14 +266,25 @@ def main():
     log("funda: info取得開始")
     for idx, t in enumerate(stock_frames.keys()):
       try:
-        info = yf.Ticker(t).info
+        tk = yf.Ticker(t)
+        info = tk.info
         dy = info.get("dividendYield")
+        # 次回決算発表予定日（取れない銘柄はNoneのまま）
+        earn = None
+        try:
+          cal = tk.calendar
+          eds = cal.get("Earnings Date") if isinstance(cal, dict) else None
+          if eds:
+            earn = int(eds[0].strftime("%Y%m%d"))
+        except Exception:
+          pass
         funda[t] = {
           "per": rnd(info.get("trailingPE"), 1),
           "fper": rnd(info.get("forwardPE"), 1),
           "pbr": rnd(info.get("priceToBook"), 2),
           "dy": rnd(dy, 2),
           "mcap": info.get("marketCap"),
+          "earn": earn,
         }
       except Exception:
         info_fail += 1

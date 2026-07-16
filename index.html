@@ -677,6 +677,34 @@ function percentile(value, arr) {
   return a.length <= 1 ? 0.5 : below / (a.length - 1 + 1e-9);
 }
 function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
+function dateFromInt(d) { const s = String(d); return new Date(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8)); }
+function daysBetween(d1, d2) { return Math.round((dateFromInt(d2) - dateFromInt(d1)) / 86400000); } // 暦日差（d2 - d1）
+function todayInt() { const t = new Date(); return t.getFullYear() * 10000 + (t.getMonth() + 1) * 100 + t.getDate(); }
+
+/* ---------------- 地合い（マーケットレジーム）判定 ----------------
+ * 指数（日経平均/S&P500）と移動平均の位置関係で相場環境を3段階判定。
+ * up: 75日線より上 / weak: 75日線割れ / down: 200日線も割れ */
+const MarketRegime = {
+  get(mkt) {
+    const series = (DataHub.market || {}).series || {};
+    const bench = series[mkt === 'JP' ? '^N225' : '^GSPC'];
+    if (!bench || bench.c.length < 80) return null;
+    const n = bench.c.length;
+    const s75 = Ind.sma(bench.c, 75)[n - 1];
+    const s200 = n >= 200 ? Ind.sma(bench.c, 200)[n - 1] : null;
+    const c = bench.c[n - 1];
+    const state = (s200 !== null && c < s200) ? 'down' : (c < s75 ? 'weak' : 'up');
+    return { state, name: bench.name, c, s75, s200 };
+  },
+  banner(mkt) {
+    const r = this.get(mkt);
+    if (!r || r.state === 'up') return '';
+    if (r.state === 'weak') {
+      return `<div class="notice">⚠️ 地合い注意: ${Fmt.esc(r.name)}が75日線を下回っています。過去10年の検証では、指数が弱い年（2018年・2022年）のスイング期待値はほぼゼロでした。新規は数を絞り、無理をしないこと。</div>`;
+    }
+    return `<div class="notice" style="border-color:var(--danger);color:var(--danger)">⛔ 下落相場: ${Fmt.esc(r.name)}が200日線も下回っています。検証上この局面で無理に取る意味はありません（期待値≒0）。新規は最小限に、守り優先で。</div>`;
+  }
+};
 
 /* ---------------- セクター資金フロー ----------------
  * FlowScore(0-100) = 40·pct(超過リターン加重) + 20·pct(Mansfield RS)
@@ -961,6 +989,12 @@ const PlanEngine = {
     if (swing.outOfRange) warnings.push('現在値がフィボナッチ押し目レンジ（23.6〜78.6%）の外です。押し目待ち、またはトレンド転換に注意。');
     if (swing.retr !== null && swing.retr > 0.65) warnings.push('すでに61.8%超まで深く押しています。トレンド崩れのリスクに注意。');
     if (info && info.splitWarn) warnings.push('過去300日以内に株式分割等の大変動を検出。フィボ・指標が歪んでいる可能性があります。');
+    if (info && info.earn) {
+      const dd = daysBetween(bars.d[n - 1], info.earn);
+      if (dd >= 0 && dd <= 14) {
+        warnings.push(`決算発表が近づいています（${Fmt.dateInt(info.earn)}予定・約${dd}日後）。決算またぎはバックテストで最大の損失要因でした（最悪−4R超）。決算通過後のエントリー、または数量を半分以下にすることを推奨。`);
+      }
+    }
 
     // コンフルエンス候補（SMA・水平線）
     const sma25 = Ind.sma(bars.c, 25)[n - 1];
@@ -1609,6 +1643,7 @@ function renderSector() {
     </div>`).join('');
   el.innerHTML = `
     <div class="card"><div class="kpi-row">${idxHtml}</div></div>
+    ${MarketRegime.banner(mkt)}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>セクター資金フロー <span class="sub">相対強度＋出来高から資金の向かい先をスコア化（3日平滑）</span></h2>
@@ -1654,8 +1689,9 @@ function renderScreener() {
     .sort((a, b) => b.score - a.score);
   const trHtml = rows.map(s => {
     const roc = type === 'swing' ? s.roc20 : s.roc60;
+    const earnSoon = s.earn && daysBetween(todayInt(), s.earn) >= 0 && daysBetween(todayInt(), s.earn) <= 10;
     return `<tr class="stock-row" data-t="${s.t}">
-      <td><b>${s.t.replace('.T', '')}</b> ${Fmt.esc(s.name)}<br><span class="muted" style="font-size:10.5px">${Fmt.esc(UI.secName(s.sec))} <span class="badge flow" style="font-size:9px">${s.flowScore.toFixed(0)}</span></span></td>
+      <td><b>${s.t.replace('.T', '')}</b> ${Fmt.esc(s.name)}${earnSoon ? ' <span class="badge warn" style="font-size:9px">決算近</span>' : ''}<br><span class="muted" style="font-size:10.5px">${Fmt.esc(UI.secName(s.sec))} <span class="badge flow" style="font-size:9px">${s.flowScore.toFixed(0)}</span></span></td>
       <td>${UI.scoreBar(s.score)}</td>
       <td>${Fmt.price(s.c, s.mkt)}</td>
       <td class="${Fmt.cls(roc)}">${Fmt.pct(roc)}</td>
@@ -1666,6 +1702,7 @@ function renderScreener() {
     </tr>`;
   }).join('');
   el.innerHTML = `
+    ${MarketRegime.banner(mkt)}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>スクリーナー <span class="sub">強いセクター内の候補銘柄（上位30）</span></h2>
@@ -1795,6 +1832,11 @@ async function loadChartArea(ticker) {
         <span>時価総額 ${mkt === 'US' ? Fmt.usd(info.mcap) : Fmt.yen(info.mcap)}</span>
         <span>52週高値 ${Fmt.price(info.hi52, mkt)}</span>
         <span>ATR ${Fmt.num(info.atr, 1)}</span>
+        ${info.earn ? (() => {
+          const dd = daysBetween(todayInt(), info.earn);
+          if (dd >= 0 && dd <= 14) return `<span class="badge warn">⚠️ 決算 ${Fmt.dateInt(info.earn).slice(5)}（${dd}日後）</span>`;
+          return `<span>決算予定 ${Fmt.dateInt(info.earn).slice(5)}</span>`;
+        })() : ''}
         ${info.splitWarn ? '<span class="badge warn">分割等の大変動あり</span>' : ''}
       </div>` : ''}
       <div id="chartWrap" style="height:440px;margin-top:8px"></div>
@@ -1877,6 +1919,12 @@ function generatePlan() {
   if (st.mode === 'long' && funda.touched && funda.total < 50) {
     result.warnings.push(`ファンダスコア${funda.total}点（50点未満）。中長期保有は見送り推奨。`);
   }
+  const regime = MarketRegime.get(st.mkt);
+  if (regime && regime.state === 'weak') {
+    result.warnings.push(`地合い注意: ${regime.name}が75日線を下回っています。指数が弱い年のスイング期待値はほぼゼロでした（10年検証）。数を絞って。`);
+  } else if (regime && regime.state === 'down') {
+    result.warnings.push(`下落相場: ${regime.name}が200日線も下回っています。この局面の新規は期待値≒0（10年検証）。原則見送りを。`);
+  }
   st.plan = { ticker: st.ticker, name: st.bars.name, mode: st.mode, mkt: st.mkt, result, funda: funda.total, createdAt: Date.now() };
   drawAnalysisOverlay();
   renderPlanArea(st.plan);
@@ -1923,6 +1971,7 @@ function renderPlanArea(plan) {
           <h2>利確（分割）</h2>
           <table class="tbl order-ticket">${targetRows}</table>
           <p class="muted" style="font-size:11px;margin-top:6px">${Fmt.esc(p.trailNote)}</p>
+          <p class="muted" style="font-size:11px;margin-top:6px">💡 楽天証券での発注: 買い=通常の指値／損切り=「逆指値付通常注文」で買いと同時に設定／トレーリング=「トレール注文」（値幅の目安 <b>${Fmt.price(Tick.floor(2.5 * p.atr, mkt), mkt)}</b> = 2.5×ATR）</p>
         </div>
       </div>
       <div class="row" style="margin-top:12px">
@@ -1946,6 +1995,8 @@ function orderTicketText(plan) {
   L.push('■ 利確');
   p.targets.forEach(t => L.push(`  ${t.label}: ${t.trail ? 'トレーリング' : Fmt.price(t.price, mkt)} で ${Math.round(t.alloc * 100)}%`));
   L.push(`■ 想定リスク: ${Fmt.yen(p.riskActual || p.riskAmt)} / 必要資金: ${Fmt.yen(p.capitalNeeded)}`);
+  L.push(`■ 発注メモ（楽天証券）: 損切りは逆指値付通常注文で同時設定 / トレールは値幅 ${Fmt.price(Tick.floor(2.5 * p.atr, mkt), mkt)}（2.5×ATR目安）`);
+  if (p.warnings.length) L.push('■ 注意: ' + p.warnings.join(' / '));
   return L.join('\n');
 }
 async function copyOrderTicket(plan) {
@@ -2461,6 +2512,37 @@ function runSelftest() {
     if (p.error) return p.error;
     if (p.totalQty !== 100) return 'totalQty=' + p.totalQty;
     return !!p.sizeNote && p.sizeNote.includes('縮小') || 'sizeNote=' + p.sizeNote;
+  });
+  T('プラン: 決算14日以内で警告', () => {
+    const last = dateFromInt(waveBars.d[waveBars.d.length - 1]);
+    const e = new Date(last); e.setDate(e.getDate() + 5);
+    const earnInt = e.getFullYear() * 10000 + (e.getMonth() + 1) * 100 + e.getDate();
+    const p = PlanEngine.generate(waveBars, { mode: 'swing', mkt: 'JP', settings, info: { earn: earnInt } });
+    if (p.error) return p.error;
+    return p.warnings.some(w => w.includes('決算')) || '決算警告が出ていない: ' + JSON.stringify(p.warnings);
+  });
+  T('プラン: 決算が遠ければ警告なし', () => {
+    const last = dateFromInt(waveBars.d[waveBars.d.length - 1]);
+    const e = new Date(last); e.setDate(e.getDate() + 60);
+    const earnInt = e.getFullYear() * 10000 + (e.getMonth() + 1) * 100 + e.getDate();
+    const p = PlanEngine.generate(waveBars, { mode: 'swing', mkt: 'JP', settings, info: { earn: earnInt } });
+    if (p.error) return p.error;
+    return !p.warnings.some(w => w.includes('決算')) || '不要な決算警告';
+  });
+  T('地合い判定: 上昇/下落の識別', () => {
+    const mkSeries = drift => {
+      const c = []; let p2 = 1000;
+      for (let i = 0; i < 250; i++) { p2 *= (1 + drift); c.push(p2); }
+      return { name: 'テスト指数', mkt: 'JP', kind: 'index', d: c.map((_, i) => 20240101 + i), o: c, h: c, l: c, c, v: c.map(() => 1000) };
+    };
+    const orig = DataHub.market;
+    DataHub.market = { series: { '^N225': mkSeries(0.002) } };
+    const up = MarketRegime.get('JP');
+    DataHub.market = { series: { '^N225': mkSeries(-0.002) } };
+    const down = MarketRegime.get('JP');
+    DataHub.market = orig;
+    if (!up || up.state !== 'up') return '上昇局面の判定失敗: ' + (up && up.state);
+    return (down && down.state === 'down') || '下落局面の判定失敗: ' + (down && down.state);
   });
   T('プラン: データ不足エラー', () => {
     const p = PlanEngine.generate(mkBars(wave.slice(0, 40)), { mode: 'swing', mkt: 'JP', settings, info: null });
