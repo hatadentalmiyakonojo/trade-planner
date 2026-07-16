@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>資金フロー分析＆トレードプラン 初回レポート（2026年7月）</title>
+<style>
+:root{ --ink:#1e2a32; --accent:#0e7c86; --line:#dde4e9; --bg:#f4f6f8; --warn:#c0392b; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--ink); line-height:1.85;
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; }
+.wrap{ max-width:820px; margin:0 auto; padding:32px 24px 80px; background:#fff;
+  box-shadow:0 1px 12px rgba(20,40,60,.06); min-height:100vh; }
+h1{ font-size:26px; border-bottom:3px solid var(--accent); padding-bottom:10px; margin:0 0 20px; }
+h2{ font-size:20px; color:var(--accent); margin:34px 0 12px; padding-left:10px; border-left:5px solid var(--accent); }
+h3{ font-size:17px; margin:22px 0 8px; }
+p{ margin:10px 0; font-size:15.5px; }
+ul,ol{ margin:8px 0; padding-left:26px; }
+li{ margin:5px 0; font-size:15.5px; }
+code{ background:#eef2f4; padding:2px 6px; border-radius:5px; font-size:14px;
+  font-family:"SF Mono",Menlo,Consolas,monospace; word-break:break-all; }
+strong{ color:#0a5c64; }
+a{ color:var(--accent); }
+hr{ border:none; border-top:1px solid var(--line); margin:26px 0; }
+blockquote{ margin:12px 0; padding:10px 16px; background:#f0f7f8; border-left:4px solid var(--accent);
+  border-radius:0 8px 8px 0; font-size:15px; }
+table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:14.5px; }
+th,td{ border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top; }
+th{ background:#eaf4f5; }
+tr:nth-child(even) td{ background:#fafcfc; }
+.cb{ font-size:17px; }
+.printbar{ position:sticky; top:0; background:#fff; padding:8px 0 14px; margin:-8px 0 8px;
+  border-bottom:1px solid var(--line); }
+.printbar button{ background:var(--accent); color:#fff; border:none; border-radius:8px;
+  padding:9px 16px; font-size:14px; cursor:pointer; }
+.printbar span{ font-size:12px; color:#5b6b76; margin-left:10px; }
+@media print{ body{ background:#fff; } .wrap{ box-shadow:none; max-width:none; padding:0; } .printbar{ display:none; } }
+</style></head><body><div class="wrap">
+<div class="printbar"><button onclick="window.print()">🖨 印刷 / PDFで保存</button>
+<span>このページは⌘Pで紙にもPDFにもできます</span></div>
+<h1>資金フロー分析＆トレードプラン 初回レポート（2026年7月）</h1>
+<p>作成日: 2026年7月17日／使用データ: 日本株 7月15日終値・米国株 7月16日終値（アプリ自動取得分）</p>
+<blockquote>⚠️ <strong>本レポートは「株式トレードプランナー」の使い方を実データで示す計算例であり、銘柄の推奨ではありません。</strong><br>記載の全数値はアプリのスクリーナー・プラン生成機能の出力そのままです（アプリで再現できます）。<br>計算前提: <strong>総資金1,000万円・1トレードあたりリスク1%（10万円）・手数料往復0.1%</strong>。<br>ご自身の資金額では「設定」タブを変更すれば同じ手順で数量が再計算されます。<br>投資の最終判断はご自身の責任でお願いします。</blockquote>
+<hr>
+<h2>1. 市況総括 — 「金利のある世界」への資金大移動</h2>
+<p><strong>日本</strong>: 日経平均 68,752円（3ヶ月 +21.7%）、ドル円 162円台。</p>
+<p>日銀は6月の金融政策決定会合で政策金利を<strong>1.00%へ引き上げ</strong>（約30年ぶり水準）、市場は9〜10月の追加利上げを織り込みつつあります。</p>
+<p>金利上昇＝利ざや拡大の恩恵を受ける<strong>銀行・保険など金融セクターに資金が回転</strong>しており、春までの半導体一極集中から<strong>幅広いセクターローテーション</strong>へ相場の質が変わってきています。</p>
+<p><strong>米国</strong>: S&amp;P500 7,566（3ヶ月 +7.7%）、NASDAQ 26,099。</p>
+<p>FRB（ウォーシュ議長）のタカ派姿勢で年内の<strong>利上げ</strong>観測が浮上する一方、AI設備投資の持続性への警戒からハイテクは1ヶ月で▲7%の調整。</p>
+<p>資金は<strong>金融・ヘルスケア</strong>へ移動中で、「マグニフィセント7疲れ」の分散相場です。</p>
+<p><strong>この局面での基本戦略</strong>（スイング・中長期共通）:</p>
+<ul>
+<li>資金が入っているセクター（下表スコア70以上）の中で、<strong>押し目を形成している銘柄だけ</strong>を狙う</li>
+<li>調整中のハイテク・半導体は「落ちるナイフ」。フィボナッチの押し目ゾーンに入り、反発の兆しが出るまで待つ</li>
+<li>金利上昇局面なので、逆指値（損切り）は必ず発注とセットで入れる</li>
+</ul>
+<p>参考情報源:</p>
+<ul>
+<li><a href="https://www.dlri.co.jp/report/macro/623090.html">日銀 政策金利1.00%への引き上げ（第一生命経済研究所）</a></li>
+<li><a href="https://www.ebc.com/jp/forex/303015.html">日銀利上げ期待でメガバンク・地銀に資金流入</a></li>
+<li><a href="https://www.nomura.co.jp/wealthstyle/article/0724/">野村證券: 日経平均見通し上方修正・銀行株に注目</a></li>
+<li><a href="https://articles.stockcharts.com/article/the-great-rotation-continues-as-financials-take-lead/">The Great Rotation Continues as Financials Take the Lead（StockCharts）</a></li>
+<li><a href="https://www.interactivecrypto.com/spy-edges-lower-as-tech-stocks-falter-amid-sector-rotation-to-healthcare-and-financials-jul-2026">SPY: Tech調整とヘルスケア・金融へのローテーション</a></li>
+</ul>
+<hr>
+<h2>2. セクター資金フロースコア（アプリ「セクター」タブの出力）</h2>
+<p>スコアは相対強度（対TOPIX/対S&amp;P500）・出来高・トレンド持続性の合成（0〜100、3日平滑）。</p>
+<h3>日本（TOPIX-17ベース）上位と下位</h3>
+<table><thead><tr><th>セクター</th><th>スコア</th><th>1週</th><th>1ヶ月</th><th>3ヶ月</th><th>判定</th></tr></thead><tbody>
+<tr><td>銀行</td><td><strong>86</strong></td><td>+1.5%</td><td>+6.7%</td><td>+21.9%</td><td>🔥資金流入中</td></tr>
+<tr><td>金融（除く銀行）</td><td><strong>81</strong></td><td>-2.1%</td><td>+2.1%</td><td>+11.3%</td><td>🔥資金流入中</td></tr>
+<tr><td>素材・化学</td><td>74</td><td>-0.1%</td><td>-2.6%</td><td>+7.2%</td><td>強</td></tr>
+<tr><td>情報通信・サービス</td><td>69</td><td>+0.2%</td><td>+2.5%</td><td>+13.8%</td><td>−</td></tr>
+<tr><td>食品</td><td>68</td><td>-4.2%</td><td>+2.1%</td><td>+2.8%</td><td>−</td></tr>
+<tr><td>電機・精密</td><td>66</td><td>-3.7%</td><td>-6.6%</td><td>+18.6%</td><td>調整中</td></tr>
+<tr><td>…</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>鉄鋼・非鉄</td><td>27</td><td>-1.8%</td><td>-13.1%</td><td>-15.6%</td><td>弱</td></tr>
+<tr><td>電力・ガス</td><td>18</td><td>-1.9%</td><td>-0.2%</td><td>-10.1%</td><td>弱</td></tr>
+<tr><td>エネルギー資源</td><td>15</td><td>-1.4%</td><td>-0.8%</td><td>-16.8%</td><td>弱</td></tr>
+</tbody></table>
+<h3>米国（SPDRセクターETFベース）上位と下位</h3>
+<table><thead><tr><th>セクター</th><th>スコア</th><th>1週</th><th>1ヶ月</th><th>3ヶ月</th><th>判定</th></tr></thead><tbody>
+<tr><td>金融（XLF）</td><td><strong>89</strong></td><td>+2.2%</td><td>+5.9%</td><td>+8.8%</td><td>強</td></tr>
+<tr><td>ヘルスケア（XLV）</td><td><strong>75</strong></td><td>-0.2%</td><td>+5.8%</td><td>+9.5%</td><td>強</td></tr>
+<tr><td>情報技術（XLK）</td><td>66</td><td>-4.0%</td><td>-7.2%</td><td>+18.4%</td><td>3ヶ月強いが調整中</td></tr>
+<tr><td>資本財（XLI）</td><td>63</td><td>-0.4%</td><td>+1.0%</td><td>+5.4%</td><td>−</td></tr>
+<tr><td>…</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>生活必需品（XLP）</td><td>34</td><td>+2.5%</td><td>-0.3%</td><td>+5.2%</td><td>弱</td></tr>
+<tr><td>通信サービス（XLC）</td><td>27</td><td>+3.1%</td><td>+1.6%</td><td>-2.9%</td><td>弱</td></tr>
+<tr><td>素材（XLB）</td><td>27</td><td>+1.2%</td><td>-3.1%</td><td>-1.0%</td><td>弱</td></tr>
+</tbody></table>
+<p><strong>読み方</strong>: 日米とも「金融」が首位＝金利上昇の受益セクターに資金が集中。日本の電機・精密と米国XLKは3ヶ月では強いが直近1ヶ月は資金流出（利益確定）で、「押し目形成中」の局面です。</p>
+<hr>
+<h2>3. スイング候補（保有2〜8週間）</h2>
+<p>アプリ「スクリーナー」タブ（スイング・上位抜粋）。ゲート条件: 75日線より上・セクタースコア60以上・売買代金5億円/日以上。</p>
+<table><thead><tr><th>コード</th><th>銘柄</th><th>セクター</th><th>スコア</th><th>現在値</th><th>20日騰落</th><th>RSI</th></tr></thead><tbody>
+<tr><td>6532</td><td>ベイカレント</td><td>情報通信</td><td>72</td><td>6,383円</td><td>+14.3%</td><td>54</td></tr>
+<tr><td>6701</td><td>日本電気（NEC）</td><td>電機・精密</td><td>72</td><td>4,270円</td><td>+10.8%</td><td>55</td></tr>
+<tr><td>3697</td><td>SHIFT</td><td>情報通信</td><td>70</td><td>702円</td><td>+8.8%</td><td>55</td></tr>
+<tr><td>2502</td><td>アサヒGHD</td><td>食品</td><td>69</td><td>1,588円</td><td>+4.8%</td><td>54</td></tr>
+<tr><td>7911</td><td>TOPPAN HD</td><td>情報通信</td><td>67</td><td>4,887円</td><td>+11.3%</td><td>47</td></tr>
+<tr><td>ABBV</td><td>AbbVie</td><td>米・ヘルスケア</td><td>69</td><td>$251.02</td><td>+12.8%</td><td>62</td></tr>
+<tr><td>JNJ</td><td>Johnson &amp; Johnson</td><td>米・ヘルスケア</td><td>69</td><td>$249.15</td><td>+5.9%</td><td>51</td></tr>
+</tbody></table>
+<h3>プラン例① ベイカレント（6532）スイング — 判定「可」RR 1.69</h3>
+<p>上昇スイング 5,138円（6/19安値）→ 7,011円（7/7高値）。現在33.5%押しで、押し目ゾーンに入り始めた段階。</p>
+<table><thead><tr><th>注文</th><th>価格</th><th>数量</th><th>根拠</th></tr></thead><tbody>
+<tr><td>買い指値</td><td><strong>6,070円</strong></td><td><strong>100株</strong></td><td>フィボ50%＋25日線の重なり（中間水準1本に縮小）</td></tr>
+<tr><td>逆指値（損切り）</td><td><strong>5,390円</strong></td><td>全量</td><td>フィボ78.6%割れ＝押し目シナリオ無効</td></tr>
+<tr><td>利確1</td><td>7,010円</td><td>50%</td><td>直近高値</td></tr>
+<tr><td>利確2</td><td>7,520円</td><td>30%</td><td>フィボ・エクステンション127.2%</td></tr>
+<tr><td>残り20%</td><td>トレーリング</td><td>−</td><td>25日線割れ or 高値−2.5×ATRで手仕舞い</td></tr>
+</tbody></table>
+<p>想定リスク6.8万円（資金の0.68%）／必要資金 約61万円。</p>
+<p>※リスク1%・3分割では100株単元に届かないため、アプリが自動で「50%押し×100株の1本指値」に縮小した例です。</p>
+<h3>プラン例② TOPPANホールディングス（7911）スイング — 判定「可」RR 1.85</h3>
+<p>上昇スイング 3,918円（6/10）→ 5,482円（7/7）。現在ちょうど38%押し。50%水準（4,705円）は<strong>過去6回反発したサポート帯＋75日線</strong>が重なる強いコンフルエンス。</p>
+<table><thead><tr><th>注文</th><th>価格</th><th>数量</th><th>根拠</th></tr></thead><tbody>
+<tr><td>買い指値</td><td><strong>4,705円</strong></td><td><strong>100株</strong></td><td>フィボ50%＋サポレジ帯(6回)＋75日線</td></tr>
+<tr><td>逆指値（損切り）</td><td><strong>4,150円</strong></td><td>全量</td><td>フィボ78.6%割れ</td></tr>
+<tr><td>利確1</td><td>5,480円</td><td>50%</td><td>直近高値</td></tr>
+<tr><td>利確2</td><td>5,900円</td><td>30%</td><td>エクステンション127.2%</td></tr>
+<tr><td>残り20%</td><td>トレーリング</td><td>−</td><td>25日線割れ or 高値−2.5×ATR</td></tr>
+</tbody></table>
+<p>想定リスク5.6万円（資金の0.56%）／必要資金 約47万円。</p>
+<h3>プラン例③ AbbVie（ABBV・米国）スイング — 判定「可」RR 1.86</h3>
+<p>ヘルスケアはS&amp;P500に対して1ヶ月+5.8%と資金流入が鮮明。上昇スイング $215.37（6/18）→ $261.64（7/2）、現在23%押しの浅い調整。</p>
+<table><thead><tr><th>注文</th><th>価格</th><th>数量</th><th>根拠</th></tr></thead><tbody>
+<tr><td>買い指値1</td><td><strong>$240.86</strong></td><td><strong>15株</strong></td><td>フィボ38.2%＋25日線</td></tr>
+<tr><td>買い指値2</td><td><strong>$236.18</strong></td><td><strong>23株</strong></td><td>フィボ50%＋61.8%＋サポレジ帯が同一ゾーンに集中（自動統合）</td></tr>
+<tr><td>逆指値（損切り）</td><td><strong>$222.03</strong></td><td>全量</td><td>フィボ78.6%割れ</td></tr>
+<tr><td>利確1</td><td>$261.64</td><td>50%</td><td>直近高値</td></tr>
+<tr><td>利確2</td><td>$274.22</td><td>30%</td><td>エクステンション127.2%</td></tr>
+<tr><td>残り20%</td><td>トレーリング</td><td>−</td><td>25日線割れ or 高値−2.5×ATR</td></tr>
+</tbody></table>
+<p>想定リスク9.9万円（$1=162.44円換算・資金の0.99%）／必要資金 約147万円。</p>
+<hr>
+<h2>4. 中長期候補（保有3〜12ヶ月）</h2>
+<p>「スクリーナー」タブ（中長期）。ゲート: 200日線より上＆200日線が上向き。<strong>日銀の利上げサイクルが続く限り、金融セクターの追い風は構造的</strong>という相場観と整合する銘柄が上位に並びました。</p>
+<table><thead><tr><th>コード</th><th>銘柄</th><th>セクター</th><th>スコア</th><th>現在値</th><th>60日騰落</th><th>PER</th><th>配当</th></tr></thead><tbody>
+<tr><td>8750</td><td>第一生命HD</td><td>金融</td><td>77</td><td>1,884円</td><td>+25.4%</td><td>15.1倍</td><td>3.8%</td></tr>
+<tr><td>8354</td><td>ふくおかFG</td><td>銀行</td><td>76</td><td>7,596円</td><td>+15.0%</td><td>16.6倍</td><td>2.8%</td></tr>
+<tr><td>8308</td><td>りそなHD</td><td>銀行</td><td>74</td><td>2,380円</td><td>+24.3%</td><td>20.7倍</td><td>1.6%</td></tr>
+<tr><td>BAC</td><td>Bank of America</td><td>米・金融</td><td>69</td><td>$61.53</td><td>+14.1%</td><td>14.2倍</td><td>1.8%</td></tr>
+<tr><td>USB</td><td>U.S. Bancorp</td><td>米・金融</td><td>69</td><td>$63.90</td><td>+12.1%</td><td>13.4倍</td><td>3.3%</td></tr>
+</tbody></table>
+<h3>プラン例④ 第一生命ホールディングス（8750）中長期 — 判定「可」RR 2.21</h3>
+<p>金利上昇の恩恵を最も直接受ける生保。PER15倍・配当3.8%とバリュエーションにも無理がない。</p>
+<p>上昇スイング 1,371円（4/27）→ 1,917円（7/15、直近高値圏）。<strong>まだ6%しか押していないため、追いかけ買いはせず下の3段で待ち構える</strong>プランです。</p>
+<table><thead><tr><th>注文</th><th>価格</th><th>数量</th><th>根拠</th></tr></thead><tbody>
+<tr><td>買い指値1</td><td><strong>1,625円</strong></td><td><strong>100株</strong></td><td>フィボ50%＋75日線</td></tr>
+<tr><td>買い指値2</td><td><strong>1,579円</strong></td><td><strong>100株</strong></td><td>フィボ61.8%</td></tr>
+<tr><td>買い指値3</td><td><strong>1,506円</strong></td><td><strong>100株</strong></td><td>フィボ78.6%＋サポレジ帯(4回)</td></tr>
+<tr><td>逆指値（損切り）</td><td><strong>1,323円</strong></td><td>全量</td><td>スイング起点安値割れ＝上昇トレンド無効</td></tr>
+<tr><td>利確1</td><td>1,917円</td><td>30%</td><td>直近高値</td></tr>
+<tr><td>利確2</td><td>2,065円</td><td>30%</td><td>エクステンション127.2%</td></tr>
+<tr><td>利確3</td><td>2,254円</td><td>40%</td><td>エクステンション161.8%（以降は75日線割れまで保有も可）</td></tr>
+</tbody></table>
+<p>全量約定時: 300株・平均1,564円／想定リスク7.4万円（0.74%）／必要資金 約47万円。</p>
+<p>⚠️ アプリの警告: 損切り幅がATRの4倍超（中長期プランの仕様上、起点安値まで引くため）。浅めの代替案 1,420円も提示されています。</p>
+<h3>プラン例⑤ Bank of America（BAC・米国）中長期 — 判定「可」RR 2.35</h3>
+<p>米金融はセクタースコア89で首位。PER14倍・GC継続54日の初動トレンド。</p>
+<p>上昇スイング $46.12（3/19）→ $62.03（7/15、高値圏）。こちらも<strong>押し待ち型</strong>の3段指値。</p>
+<table><thead><tr><th>注文</th><th>価格</th><th>数量</th><th>根拠</th></tr></thead><tbody>
+<tr><td>買い指値1</td><td><strong>$54.00</strong></td><td><strong>27株</strong></td><td>フィボ50%＋75日線＋サポレジ帯</td></tr>
+<tr><td>買い指値2</td><td><strong>$52.19</strong></td><td><strong>27株</strong></td><td>フィボ61.8%</td></tr>
+<tr><td>買い指値3</td><td><strong>$49.26</strong></td><td><strong>36株</strong></td><td>フィボ78.6%＋サポレジ帯(5回)</td></tr>
+<tr><td>逆指値（損切り）</td><td><strong>$44.87</strong></td><td>全量</td><td>スイング起点安値割れ</td></tr>
+<tr><td>利確1</td><td>$62.03</td><td>30%</td><td>直近高値</td></tr>
+<tr><td>利確2</td><td>$66.35</td><td>30%</td><td>エクステンション127.2%</td></tr>
+<tr><td>利確3</td><td>$71.86</td><td>40%</td><td>エクステンション161.8%</td></tr>
+</tbody></table>
+<p>全量約定時: 90株／想定リスク9.8万円（0.98%）／必要資金 約75万円。</p>
+<hr>
+<h2>5. 手堅く運用するための5つのルール</h2>
+<ol>
+<li><strong>リスクは1トレード=資金の1%まで</strong>。10連敗しても資金の9割が残る水準です。数量はアプリが自動計算します。</li>
+<li><strong>「見送り推奨」（赤）が出たら買わない</strong>。リスクリワード1.5未満のトレードは、勝率6割でも長期では損をします。</li>
+<li><strong>逆指値はエントリーと同時に発注</strong>。「下がったら考える」は禁物。アプリの逆指値価格をそのまま使ってください。</li>
+<li><strong>押し目が来なければ縁がなかったと考える</strong>。指値に届かず上がってしまった銘柄を追いかけるのが一番危険です。候補は毎週スクリーナーが更新します。</li>
+<li><strong>すべてのトレードをジャーナルに記録</strong>。30件たまると自分の実測勝率で期待値が計算されるようになります。</li>
+</ol>
+<h2>6. このレポートの数値をアプリで再現する手順</h2>
+<ol>
+<li>設定タブ: 総資金 10,000,000円・リスク1%・手数料0.1%に設定</li>
+<li>セクタータブ: 日本/米国を切り替えてスコア表を確認（§2と同じ値）</li>
+<li>スクリーナータブ: スイング/中長期を切り替え（§3・§4の表と同じ順位）</li>
+<li>銘柄をタップ → チャートでフィボ位置を確認 → 「トレードプラン生成」（§3・§4と同じ注文票）</li>
+</ol>
+<p>※データは毎朝自動更新されるため、<strong>翌日以降は数値が変わります</strong>（それが正常です）。このレポートは2026年7月17日時点のスナップショットです。</p>
+<hr>
+<p>*本レポートおよびアプリは投資助言ではありません。記載の銘柄・価格・数量は計算例であり、売買を推奨するものではありません。株式投資には元本割れのリスクがあります。*</p>
+</div></body></html>

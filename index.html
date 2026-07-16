@@ -1,0 +1,2590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>株式トレードプランナー</title>
+<style>
+:root {
+  --bg: #0e1117;
+  --bg2: #161b24;
+  --bg3: #1e2530;
+  --fg: #e6e8ee;
+  --fg2: #9aa3b2;
+  --line: #2a3342;
+  --accent: #4c8dff;
+  --accent2: #2f6fe0;
+  --up: #ef4444;      /* 陽線・上昇（日本式: 赤） */
+  --down: #3b82f6;    /* 陰線・下落（日本式: 青） */
+  --gold: #f59e0b;
+  --green: #22c55e;
+  --warn: #f97316;
+  --danger: #ef4444;
+  --radius: 10px;
+  --tap: 44px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  font-size: 14px; line-height: 1.55;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button { font-family: inherit; }
+
+/* ---- ヘッダー・タブ ---- */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: linear-gradient(180deg, #131926, #0f141d);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px 0;
+}
+.hd-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hd-title { font-size: 16px; font-weight: 700; letter-spacing: .02em; }
+.hd-title small { color: var(--fg2); font-weight: 400; margin-left: 6px; font-size: 11px; }
+#dataBadge {
+  font-size: 11px; color: var(--fg2); background: var(--bg3);
+  padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line);
+}
+#dataBadge.offline { color: var(--warn); border-color: var(--warn); }
+nav { display: flex; gap: 2px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; }
+nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  appearance: none; border: none; background: none; color: var(--fg2);
+  padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border-bottom: 2px solid transparent; white-space: nowrap; min-height: 40px;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+main { max-width: 1160px; margin: 0 auto; padding: 12px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ---- 共通部品 ---- */
+.card {
+  background: var(--bg2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 12px;
+}
+.card h2 { font-size: 14px; margin-bottom: 8px; color: var(--fg); }
+.card h2 .sub { font-size: 11px; color: var(--fg2); font-weight: 400; margin-left: 8px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--bg3); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; min-height: var(--tap);
+}
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+.btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+.btn.small { min-height: 32px; padding: 4px 10px; font-size: 12px; }
+.seg { display: inline-flex; background: var(--bg3); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button {
+  border: none; background: none; color: var(--fg2); padding: 8px 16px;
+  font-size: 13px; font-weight: 600; cursor: pointer; min-height: 38px;
+}
+.seg button.active { background: var(--accent2); color: #fff; }
+input[type=text], input[type=number], input[type=date], select, textarea {
+  background: var(--bg3); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; font-size: 14px; font-family: inherit;
+  min-height: 40px;
+}
+input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+label.fld { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--fg2); }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tbl th, table.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+table.tbl th { color: var(--fg2); font-weight: 600; font-size: 11px; }
+table.tbl th:first-child, table.tbl td:first-child { text-align: left; }
+.tbl-wrap { overflow-x: auto; }
+.pos { color: var(--up); }
+.neg { color: var(--down); }
+.muted { color: var(--fg2); }
+.badge {
+  display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px;
+  border-radius: 999px; border: 1px solid currentColor; vertical-align: middle;
+}
+.badge.flow { color: var(--gold); }
+.badge.good { color: var(--green); }
+.badge.ok { color: var(--accent); }
+.badge.bad { color: var(--danger); }
+.badge.warn { color: var(--warn); }
+.notice {
+  background: rgba(249,115,22,.08); border: 1px solid rgba(249,115,22,.4);
+  color: var(--warn); border-radius: 8px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px;
+}
+.empty { color: var(--fg2); text-align: center; padding: 28px 10px; font-size: 13px; }
+
+/* ---- セクタービュー ---- */
+.sector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.sec-card {
+  background: var(--bg3); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px; cursor: pointer; position: relative;
+}
+.sec-card .nm { font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.sec-card .score { font-size: 22px; font-weight: 800; margin: 2px 0; }
+.sec-card .rets { display: flex; gap: 4px; margin-top: 4px; }
+.sec-card .rets span { flex: 1; text-align: center; font-size: 11px; padding: 3px 0; border-radius: 4px; }
+.tier-S { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.tier-W { opacity: .6; }
+
+/* ---- スクリーナー ---- */
+.stock-row { cursor: pointer; }
+.stock-row:hover { background: rgba(76,141,255,.06); }
+.scorebar { display: inline-block; width: 54px; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.scorebar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+
+/* ---- チャート ---- */
+#chartWrap { position: relative; width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+#chartWrap canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+#chartWrap canvas:first-child { position: relative; }
+.chart-legend { font-size: 11px; color: var(--fg2); display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 2px; }
+.chart-legend b { font-weight: 600; }
+.ticker-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.ticker-head .tk-name { font-size: 17px; font-weight: 800; }
+.ticker-head .tk-price { font-size: 17px; font-weight: 700; }
+
+/* ---- プラン ---- */
+.plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 760px) { .plan-grid { grid-template-columns: 1fr; } }
+.order-ticket { font-size: 13px; }
+.order-ticket td:first-child { color: var(--fg2); }
+.kpi-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.kpi {
+  flex: 1; min-width: 100px; background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; text-align: center;
+}
+.kpi .v { font-size: 18px; font-weight: 800; }
+.kpi .k { font-size: 10.5px; color: var(--fg2); }
+
+/* ---- チェックリスト ---- */
+.chk { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: var(--tap); }
+.chk input { width: 20px; height: 20px; accent-color: var(--accent); }
+.chk .pt { margin-left: auto; color: var(--fg2); font-size: 12px; white-space: nowrap; }
+
+/* ---- モーダル ---- */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 14px;
+  max-width: 560px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 18px;
+}
+.modal h3 { font-size: 15px; margin-bottom: 10px; }
+
+footer { text-align: center; color: var(--fg2); font-size: 10.5px; padding: 14px 12px 22px; }
+@media (max-width: 640px) {
+  main { padding: 8px; }
+  .hd-title small { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-row">
+    <div class="hd-title">📈 株式トレードプランナー<small>スイング・中長期 意思決定支援</small></div>
+    <span id="dataBadge">データ読込中…</span>
+    <span style="flex:1"></span>
+  </div>
+  <nav id="mainNav">
+    <button class="tab-btn active" data-view="sector">セクター</button>
+    <button class="tab-btn" data-view="screener">スクリーナー</button>
+    <button class="tab-btn" data-view="chart">チャート分析</button>
+    <button class="tab-btn" data-view="plans">プラン</button>
+    <button class="tab-btn" data-view="journal">ジャーナル</button>
+    <button class="tab-btn" data-view="settings">設定</button>
+  </nav>
+</header>
+
+<main>
+  <div id="view-sector" class="view active"></div>
+  <div id="view-screener" class="view"></div>
+  <div id="view-chart" class="view"></div>
+  <div id="view-plans" class="view"></div>
+  <div id="view-journal" class="view"></div>
+  <div id="view-settings" class="view"></div>
+</main>
+
+<footer>
+  本アプリは計算・分析ツールであり、投資助言・特定銘柄の推奨ではありません。表示される価格・数量・戦略はすべて計算例です。投資の最終判断はご自身の責任で行ってください。
+</footer>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
+
+<script>
+'use strict';
+/* =====================================================================
+ * 株式トレードプランナー
+ * 単一HTML / vanilla JS / オフライン動作（GitHub Pages配信時は自動データ読込）
+ * =================================================================== */
+const APP_VERSION = '1.0.0';
+const DATA_SCHEMA = 1;
+const LS_PREFIX = 'tp.';
+
+/* ---------------- Store: localStorage 抽象化 ---------------- */
+const Store = {
+  get(key, fallback) {
+    try {
+      const raw = localStorage.getItem(LS_PREFIX + key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch (e) { return fallback; }
+  },
+  set(key, val) {
+    try {
+      localStorage.setItem(LS_PREFIX + key, JSON.stringify(val));
+      return true;
+    } catch (e) {
+      alert('保存に失敗しました（容量不足の可能性）。設定→バックアップ後、キャッシュ削除をお試しください。');
+      return false;
+    }
+  },
+  remove(key) { localStorage.removeItem(LS_PREFIX + key); },
+  keys() {
+    const out = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(LS_PREFIX)) out.push(k.slice(LS_PREFIX.length));
+    }
+    return out;
+  },
+  migrate() {
+    const meta = this.get('meta', null);
+    if (!meta) { this.set('meta', { schema: DATA_SCHEMA, firstRunAt: Date.now() }); return; }
+    if ((meta.schema || 0) < DATA_SCHEMA) {
+      // 将来のスキーマ変更時はここに meta.schema の段階別マイグレーションを追加する
+      meta.schema = DATA_SCHEMA;
+      this.set('meta', meta);
+    }
+  },
+  backupObject() {
+    const data = {};
+    for (const k of this.keys()) {
+      if (k.startsWith('cache.')) continue; // 相場データキャッシュは含めない
+      data[k] = this.get(k);
+    }
+    return { app: 'trade-planner', version: APP_VERSION, schema: DATA_SCHEMA, exportedAt: new Date().toISOString(), data };
+  },
+  restoreObject(obj, mode) { // mode: 'replace'
+    if (!obj || obj.app !== 'trade-planner' || !obj.data) throw new Error('バックアップ形式が不正です');
+    if ((obj.schema || 0) > DATA_SCHEMA) throw new Error('新しいバージョンのバックアップです。アプリを更新してください');
+    for (const k of this.keys()) { if (!k.startsWith('cache.')) this.remove(k); }
+    for (const [k, v] of Object.entries(obj.data)) this.set(k, v);
+    this.migrate();
+  }
+};
+
+/* ---------------- 設定 ---------------- */
+const DEFAULT_SETTINGS = {
+  capital: 3000000,      // 総資金（円）
+  riskPct: 1.0,          // 1トレードあたり許容リスク（%）
+  feePct: 0.1,           // 往復手数料率（%）概算
+  defaultMode: 'swing',  // swing | long
+};
+const Settings = {
+  load() { return Object.assign({}, DEFAULT_SETTINGS, Store.get('settings', {})); },
+  save(s) { Store.set('settings', s); }
+};
+
+/* ---------------- 数値フォーマット ---------------- */
+const Fmt = {
+  num(x, nd = 0) {
+    if (x === null || x === undefined || isNaN(x)) return '−';
+    return Number(x).toLocaleString('ja-JP', { minimumFractionDigits: nd, maximumFractionDigits: nd });
+  },
+  price(x, mkt) {
+    if (x === null || x === undefined || isNaN(x)) return '−';
+    return mkt === 'US' ? '$' + this.num(x, 2) : this.num(x, x < 100 ? 1 : 0) + '円';
+  },
+  pct(x, nd = 1, signed = true) {
+    if (x === null || x === undefined || isNaN(x)) return '−';
+    const v = (x * 100).toFixed(nd);
+    return (signed && x > 0 ? '+' : '') + v + '%';
+  },
+  yen(x) {
+    if (x === null || x === undefined || isNaN(x)) return '−';
+    if (Math.abs(x) >= 1e12) return (x / 1e12).toFixed(1) + '兆円';
+    if (Math.abs(x) >= 1e8) return (x / 1e8).toFixed(0) + '億円';
+    if (Math.abs(x) >= 1e4) return (x / 1e4).toFixed(0) + '万円';
+    return this.num(x) + '円';
+  },
+  usd(x) {
+    if (x === null || x === undefined || isNaN(x)) return '−';
+    if (Math.abs(x) >= 1e12) return '$' + (x / 1e12).toFixed(1) + 'T';
+    if (Math.abs(x) >= 1e9) return '$' + (x / 1e9).toFixed(1) + 'B';
+    if (Math.abs(x) >= 1e6) return '$' + (x / 1e6).toFixed(0) + 'M';
+    return '$' + this.num(x);
+  },
+  cls(x) { return x > 0 ? 'pos' : x < 0 ? 'neg' : 'muted'; },
+  dateInt(d) { // 20260717 -> 2026/07/17
+    const s = String(d);
+    return s.slice(0, 4) + '/' + s.slice(4, 6) + '/' + s.slice(6, 8);
+  },
+  esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+};
+
+/* ---------------- 呼値（ティックサイズ） ----------------
+ * 日本株は「その他銘柄」の呼値テーブルを使用（TOPIX100構成銘柄は実際には
+ * さらに細かい呼値だが、粗い単位への切り下げは注文価格として常に安全側）。 */
+const Tick = {
+  sizeJP(price) {
+    if (price <= 3000) return 1;
+    if (price <= 5000) return 5;
+    if (price <= 30000) return 10;
+    if (price <= 50000) return 50;
+    if (price <= 300000) return 100;
+    if (price <= 500000) return 500;
+    if (price <= 3000000) return 1000;
+    return 5000;
+  },
+  floor(price, mkt) {
+    if (!isFinite(price)) return price;
+    if (mkt === 'US') return Math.floor(price * 100) / 100;
+    const t = this.sizeJP(price);
+    return Math.floor(price / t) * t;
+  },
+  ceil(price, mkt) {
+    if (!isFinite(price)) return price;
+    if (mkt === 'US') return Math.ceil(price * 100) / 100;
+    const t = this.sizeJP(price);
+    return Math.ceil(price / t) * t;
+  }
+};
+
+/* ---------------- テクニカル指標（配列 in / 配列 out） ---------------- */
+const Ind = {
+  sma(src, n) {
+    const out = new Array(src.length).fill(null);
+    let sum = 0;
+    for (let i = 0; i < src.length; i++) {
+      sum += src[i];
+      if (i >= n) sum -= src[i - n];
+      if (i >= n - 1) out[i] = sum / n;
+    }
+    return out;
+  },
+  ema(src, n, startIdx = 0) {
+    const out = new Array(src.length).fill(null);
+    const k = 2 / (n + 1);
+    let prev = null;
+    for (let i = startIdx; i < src.length; i++) {
+      const v = src[i];
+      if (v === null || v === undefined) continue;
+      prev = prev === null ? v : v * k + prev * (1 - k);
+      out[i] = prev;
+    }
+    return out;
+  },
+  wilder(src, n) { // Wilder平滑（RSI/ATR用）: alpha = 1/n
+    const out = new Array(src.length).fill(null);
+    let prev = null;
+    for (let i = 0; i < src.length; i++) {
+      const v = src[i];
+      if (v === null || v === undefined) continue;
+      prev = prev === null ? v : (v - prev) / n + prev;
+      out[i] = prev;
+    }
+    return out;
+  },
+  rsi(close, n = 14) {
+    const gains = [], losses = [];
+    for (let i = 0; i < close.length; i++) {
+      const d = i === 0 ? 0 : close[i] - close[i - 1];
+      gains.push(Math.max(d, 0));
+      losses.push(Math.max(-d, 0));
+    }
+    const ag = this.wilder(gains, n), al = this.wilder(losses, n);
+    return close.map((_, i) => {
+      if (i < n) return null;
+      if (al[i] === 0) return 100;
+      return 100 - 100 / (1 + ag[i] / al[i]);
+    });
+  },
+  atr(bars, n = 14) {
+    const tr = [];
+    for (let i = 0; i < bars.c.length; i++) {
+      if (i === 0) { tr.push(bars.h[i] - bars.l[i]); continue; }
+      tr.push(Math.max(bars.h[i] - bars.l[i], Math.abs(bars.h[i] - bars.c[i - 1]), Math.abs(bars.l[i] - bars.c[i - 1])));
+    }
+    const out = this.wilder(tr, n);
+    return out.map((v, i) => i < n ? null : v);
+  },
+  macd(close, fast = 12, slow = 26, sig = 9) {
+    const ef = this.ema(close, fast), es = this.ema(close, slow);
+    const line = close.map((_, i) => (ef[i] === null || es[i] === null || i < slow - 1) ? null : ef[i] - es[i]);
+    const firstIdx = line.findIndex(v => v !== null);
+    const signal = this.ema(line.map(v => v === null ? null : v), sig, firstIdx < 0 ? 0 : firstIdx);
+    const hist = line.map((v, i) => (v === null || signal[i] === null) ? null : v - signal[i]);
+    return { line, signal, hist };
+  },
+  roc(close, n) {
+    return close.map((v, i) => i < n ? null : v / close[i - n] - 1);
+  }
+};
+
+/* ---------------- ZigZag スイング検出 ----------------
+ * 閾値 = max(k×ATR14, 終値×p)。反転が閾値を超えた時点で直前の極値をピボット確定。
+ * 末尾の未確定極値は provisional=true で返す（リペイントし得るため表示上「仮」）。 */
+const ZigZag = {
+  PARAMS: {
+    swing: { k: 2.0, p: 0.03 },
+    long: { k: 3.0, p: 0.06 }
+  },
+  detect(bars, mode) {
+    const { k, p } = this.PARAMS[mode] || this.PARAMS.swing;
+    const n = bars.c.length;
+    if (n < 30) return [];
+    const atr = Ind.atr(bars, 14);
+    const th = i => Math.max(k * (atr[i] ?? atr[14] ?? 0), bars.c[i] * p);
+    const pivots = [];
+    // 初期方向: 最初の20本で高値更新と安値更新のどちらが後に出たかで決める
+    let hiIdx = 0, loIdx = 0;
+    for (let i = 1; i < Math.min(20, n); i++) {
+      if (bars.h[i] >= bars.h[hiIdx]) hiIdx = i;
+      if (bars.l[i] <= bars.l[loIdx]) loIdx = i;
+    }
+    let dir, extVal, extIdx;
+    if (hiIdx >= loIdx) { dir = 1; extVal = bars.h[hiIdx]; extIdx = hiIdx; }
+    else { dir = -1; extVal = bars.l[loIdx]; extIdx = loIdx; }
+    for (let i = Math.max(hiIdx, loIdx) + 1; i < n; i++) {
+      if (dir === 1) {
+        if (bars.h[i] > extVal) { extVal = bars.h[i]; extIdx = i; }
+        else if (extVal - bars.l[i] > th(i)) {
+          pivots.push({ i: extIdx, price: extVal, type: 'H', provisional: false });
+          dir = -1; extVal = bars.l[i]; extIdx = i;
+        }
+      } else {
+        if (bars.l[i] < extVal) { extVal = bars.l[i]; extIdx = i; }
+        else if (bars.h[i] - extVal > th(i)) {
+          pivots.push({ i: extIdx, price: extVal, type: 'L', provisional: false });
+          dir = 1; extVal = bars.h[i]; extIdx = i;
+        }
+      }
+    }
+    pivots.push({ i: extIdx, price: extVal, type: dir === 1 ? 'H' : 'L', provisional: true });
+    return pivots;
+  }
+};
+
+/* ---------------- フィボナッチ ----------------
+ * 上昇トレンドの押し目買い用: 確定ピボットから直近の L→H スイングを選択。
+ * 条件: 振幅≥2p、Hがその後更新されていない、現在値が23.6〜78.6%押しの範囲。
+ * 不適なら1つ前のペアに遡る（最大3ペア）。 */
+const Fibo = {
+  RETRACE: [0.236, 0.382, 0.5, 0.618, 0.786],
+  EXT: [0.272, 0.618], // H + (H-L)×ext → 127.2% / 161.8%
+  pickSwing(bars, pivots, mode) {
+    const { p } = ZigZag.PARAMS[mode] || ZigZag.PARAMS.swing;
+    const confirmed = pivots.filter(pv => !pv.provisional);
+    const cNow = bars.c[bars.c.length - 1];
+    const tried = [];
+    // 末尾から L→H ペアを列挙
+    for (let j = confirmed.length - 1; j >= 1 && tried.length < 3; j--) {
+      const a = confirmed[j - 1], b = confirmed[j];
+      if (a.type !== 'L' || b.type !== 'H') continue;
+      let L = a, H = b;
+      // Hがその後更新されている場合は最高値まで延長（未確定の高値も含む）
+      let maxH = H.price, maxIdx = H.i;
+      for (let i = H.i + 1; i < bars.c.length; i++) {
+        if (bars.h[i] > maxH) { maxH = bars.h[i]; maxIdx = i; }
+      }
+      if (maxH > H.price) H = { i: maxIdx, price: maxH, type: 'H', provisional: false };
+      tried.push({ L, H });
+    }
+    for (const { L, H } of tried) {
+      const amp = (H.price - L.price) / L.price;
+      if (amp < 2 * p) continue;
+      const retr = (H.price - cNow) / (H.price - L.price);
+      if (retr >= -0.02 && retr <= 0.786 + 0.02) return { L, H, retr: Math.max(retr, 0) };
+    }
+    return tried.length ? { ...tried[0], retr: null, outOfRange: true } : null;
+  },
+  levels(L, H) {
+    const range = H.price - L.price;
+    const retr = {};
+    for (const r of this.RETRACE) retr[r] = H.price - range * r;
+    const ext = {};
+    // キーは丸めて固定（1+0.618 の浮動小数点誤差で 1.618 と一致しなくなるのを防ぐ）
+    for (const e of this.EXT) ext[Math.round((1 + e) * 1000) / 1000] = H.price + range * e;
+    return { retr, ext, range };
+  }
+};
+
+/* ---------------- 水平線（サポート/レジスタンス）自動検出 ----------------
+ * 直近120本のZigZagピボット価格を ATR×0.5 幅でクラスタリングし、
+ * 3回以上タッチされた価格帯を返す。 */
+const Levels = {
+  detect(bars, pivots) {
+    const n = bars.c.length;
+    if (n < 40) return [];
+    const atrArr = Ind.atr(bars, 14);
+    const atr = atrArr[n - 1] || (bars.c[n - 1] * 0.02);
+    const from = Math.max(0, n - 120);
+    const pts = pivots.filter(p => p.i >= from && !p.provisional).map(p => p.price);
+    // 高値・安値のローカルタッチも追加（pivot間の細かい反発を拾う）
+    for (let i = from + 2; i < n - 2; i++) {
+      if (bars.h[i] >= bars.h[i - 1] && bars.h[i] >= bars.h[i - 2] && bars.h[i] >= bars.h[i + 1] && bars.h[i] >= bars.h[i + 2]) pts.push(bars.h[i]);
+      if (bars.l[i] <= bars.l[i - 1] && bars.l[i] <= bars.l[i - 2] && bars.l[i] <= bars.l[i + 1] && bars.l[i] <= bars.l[i + 2]) pts.push(bars.l[i]);
+    }
+    pts.sort((a, b) => a - b);
+    const width = atr * 0.5;
+    const clusters = [];
+    let cur = [];
+    for (const v of pts) {
+      if (!cur.length || v - cur[0] <= width) cur.push(v);
+      else { clusters.push(cur); cur = [v]; }
+    }
+    if (cur.length) clusters.push(cur);
+    return clusters.filter(cl => cl.length >= 3)
+      .map(cl => ({ price: cl.reduce((a, b) => a + b, 0) / cl.length, touches: cl.length }))
+      .sort((a, b) => b.touches - a.touches).slice(0, 6);
+  }
+};
+
+/* ---------------- DataHub: 相場データ供給（3段フォールバック） ----------------
+ * 1) 同一オリジン fetch（GitHub Pages配信時、data/ をActionsが毎日更新）
+ * 2) localStorageキャッシュ（前回fetch分 / 手動取り込み分）
+ * 3) 取り込み画面へ誘導（CSV・コピペ）
+ */
+const DataHub = {
+  meta: null, market: null, summary: null,
+  online: false,
+  _mem: {},           // ticker -> bars（メモリキャッシュ）
+  CACHE_MAX: 20,      // localStorageに保持する銘柄OHLCV数（LRU）
+
+  async init() {
+    try {
+      const meta = await this._fetchJson('data/meta.json');
+      const [market, summary] = await Promise.all([
+        this._fetchJson('data/market.json?v=' + encodeURIComponent(meta.generatedAt)),
+        this._fetchJson('data/summary.json?v=' + encodeURIComponent(meta.generatedAt)),
+      ]);
+      this.meta = meta; this.market = market; this.summary = summary;
+      this.online = true;
+      Store.set('cache.meta', meta);
+      Store.set('cache.market', market);
+      Store.set('cache.summary', summary);
+    } catch (e) {
+      this.meta = Store.get('cache.meta', null);
+      this.market = Store.get('cache.market', null);
+      this.summary = Store.get('cache.summary', null);
+      this.online = false;
+    }
+  },
+  async _fetchJson(url) {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('fetch failed: ' + url);
+    return res.json();
+  },
+  usdjpy() {
+    return (this.summary && this.summary.usdjpy) || (this.meta && this.meta.usdjpy) || Store.get('cache.usdjpy', 150);
+  },
+  dataDate() {
+    return this.meta ? this.meta.generatedAt : (Store.get('cache.meta', {}).generatedAt || null);
+  },
+  stockInfo(t) {
+    if (!this.summary) return null;
+    return this.summary.stocks.find(s => s.t === t) || null;
+  },
+  /* 銘柄OHLCV取得: メモリ → fetch → LSキャッシュ → null */
+  async getBars(t) {
+    if (this._mem[t]) return this._mem[t];
+    if (this.online) {
+      try {
+        const v = this.meta ? '?v=' + encodeURIComponent(this.meta.generatedAt) : '';
+        const obj = await this._fetchJson('data/ohlcv/' + encodeURIComponent(t) + '.json' + v);
+        this._mem[t] = obj;
+        this._cachePut(t, obj);
+        return obj;
+      } catch (e) { /* fall through */ }
+    }
+    const cache = Store.get('cache.ohlcv', {});
+    if (cache[t]) { this._mem[t] = cache[t].data; return cache[t].data; }
+    return null;
+  },
+  _cachePut(t, obj) {
+    const cache = Store.get('cache.ohlcv', {});
+    cache[t] = { savedAt: Date.now(), data: obj };
+    const keys = Object.keys(cache);
+    if (keys.length > this.CACHE_MAX) {
+      keys.sort((a, b) => cache[a].savedAt - cache[b].savedAt);
+      for (const k of keys.slice(0, keys.length - this.CACHE_MAX)) delete cache[k];
+    }
+    try { localStorage.setItem(LS_PREFIX + 'cache.ohlcv', JSON.stringify(cache)); } catch (e) { /* 容量超過時はキャッシュ断念 */ }
+  },
+  /* 手動取り込みデータの登録 */
+  putImported(t, name, mkt, bars) {
+    const obj = { t, name, sec: null, mkt, ...bars };
+    this._mem[t] = obj;
+    this._cachePut(t, obj);
+    return obj;
+  }
+};
+
+/* ---------------- CSV / コピペ パーサ ----------------
+ * 対応: stooq形式CSV(Date,Open,High,Low,Close,Volume) /
+ *       Yahoo!ファイナンス時系列コピペ(タブ or 空白区切り、日付は2026/7/17・2026年7月17日両対応) */
+const Importer = {
+  parse(text) {
+    const rows = [];
+    for (const rawLine of text.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const cells = line.split(/[\t,]|\s{2,}| /).filter(c => c !== '');
+      if (cells.length < 5) continue;
+      const d = this._parseDate(cells[0]);
+      if (!d) continue;
+      const nums = cells.slice(1).map(c => parseFloat(c.replace(/[,，円]/g, '')));
+      // [O,H,L,C] or [O,H,L,C,V] or [O,H,L,C,V,調整後]（Yahoo）
+      if (nums.slice(0, 4).some(v => isNaN(v))) continue;
+      rows.push({ d, o: nums[0], h: nums[1], l: nums[2], c: nums[3], v: isNaN(nums[4]) ? 0 : nums[4] });
+    }
+    rows.sort((a, b) => a.d - b.d);
+    // 重複日付は後勝ち
+    const uniq = [];
+    for (const r of rows) {
+      if (uniq.length && uniq[uniq.length - 1].d === r.d) uniq[uniq.length - 1] = r;
+      else uniq.push(r);
+    }
+    if (uniq.length < 30) return { error: '有効な行が' + uniq.length + '行しかありません（最低30行必要）。形式をご確認ください。' };
+    return {
+      bars: {
+        d: uniq.map(r => r.d), o: uniq.map(r => r.o), h: uniq.map(r => r.h),
+        l: uniq.map(r => r.l), c: uniq.map(r => r.c), v: uniq.map(r => r.v)
+      }
+    };
+  },
+  _parseDate(s) {
+    let m = s.match(/^(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})日?$/);
+    if (m) return +m[1] * 10000 + +m[2] * 100 + +m[3];
+    m = s.match(/^(\d{8})$/);
+    if (m) return +m[1];
+    return null;
+  }
+};
+/* ---------------- 汎用: パーセンタイル ---------------- */
+function percentile(value, arr) {
+  const a = arr.filter(v => v !== null && v !== undefined && !isNaN(v));
+  if (!a.length || value === null || value === undefined || isNaN(value)) return 0;
+  let below = 0;
+  for (const v of a) if (v < value) below++;
+  return a.length <= 1 ? 0.5 : below / (a.length - 1 + 1e-9);
+}
+function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
+
+/* ---------------- セクター資金フロー ----------------
+ * FlowScore(0-100) = 40·pct(超過リターン加重) + 20·pct(Mansfield RS)
+ *                  + 15·pct(出来高比) + 15·陽線売買代金 + 10·RS持続率
+ * 薄商いETF（平均売買代金<1億円）は出来高項を除き価格ベースで再配分。
+ * 直近10営業日分を計算し3日EMAで平滑化、ティア変更は2日連続で確定。 */
+const SectorFlow = {
+  OFFSETS: 10,
+  compute(mkt) {
+    const series = (DataHub.market || {}).series || {};
+    const bench = series[mkt === 'JP' ? '1306.T' : 'SPY'];
+    if (!bench) return [];
+    const benchMap = new Map();
+    bench.d.forEach((d, i) => benchMap.set(d, bench.c[i]));
+    const rows = [];
+    const raw = {}; // t -> metrics per offset
+    const sectors = Object.entries(series).filter(([t, s]) => s.kind === 'sector' && s.mkt === mkt);
+    for (const [t, s] of sectors) {
+      const cs = [], cb = [], vs = [];
+      s.d.forEach((d, i) => {
+        if (benchMap.has(d)) { cs.push(s.c[i]); cb.push(benchMap.get(d)); vs.push(s.v[i]); }
+      });
+      const n = cs.length;
+      if (n < 80) continue;
+      const rsp = cs.map((v, i) => v / cb[i]);
+      const rspS200 = Ind.sma(rsp, Math.min(200, n - 5));
+      const rspS20 = Ind.sma(rsp, 20);
+      const v5 = Ind.sma(vs, 5), v20 = Ind.sma(vs, 20);
+      const turn20 = Ind.sma(cs.map((c, i) => c * vs[i]), 20);
+      const lowLiq = (turn20[n - 1] || 0) < (mkt === 'JP' ? 1e8 : 5e6);
+      const R = (arr, t, k) => (t - k >= 0) ? arr[t] / arr[t - k] - 1 : null;
+      const offs = [];
+      for (let off = this.OFFSETS - 1; off >= 0; off--) {
+        const t2 = n - 1 - off;
+        if (t2 < 70) { offs.push(null); continue; }
+        const excess = 0.2 * ((R(cs, t2, 5) ?? 0) - (R(cb, t2, 5) ?? 0))
+                     + 0.4 * ((R(cs, t2, 21) ?? 0) - (R(cb, t2, 21) ?? 0))
+                     + 0.4 * ((R(cs, t2, 63) ?? 0) - (R(cb, t2, 63) ?? 0));
+        const mans = rspS200[t2] ? (rsp[t2] / rspS200[t2] - 1) * 100 : 0;
+        const volR = (v20[t2] > 0) ? v5[t2] / v20[t2] : null;
+        let upTurn = 0, allTurn = 0;
+        for (let i = Math.max(1, t2 - 19); i <= t2; i++) {
+          const to = cs[i] * vs[i];
+          allTurn += to;
+          if (cs[i] > cs[i - 1]) upTurn += to;
+        }
+        const upVol = allTurn > 0 ? upTurn / allTurn : 0.5;
+        let persist = 0;
+        for (let i = 0; i < 20; i++) if (rspS20[t2 - i] && rsp[t2 - i] > rspS20[t2 - i]) persist++;
+        persist /= 20;
+        offs.push({ excess, mans, volR, upVol, persist });
+      }
+      raw[t] = { offs, lowLiq };
+      rows.push({
+        t, name: s.name, lowLiq,
+        r5: R(cs, n - 1, 5), r21: R(cs, n - 1, 21), r63: R(cs, n - 1, 63),
+        volR: raw[t].offs[this.OFFSETS - 1]?.volR ?? null,
+        upVol: raw[t].offs[this.OFFSETS - 1]?.upVol ?? null,
+        excess21: (R(cs, n - 1, 21) ?? 0) - (R(cb, n - 1, 21) ?? 0),
+      });
+    }
+    // 各オフセットでパーセンタイル → 素点 → EMA3平滑
+    for (const row of rows) row.scoreHist = [];
+    for (let off = 0; off < this.OFFSETS; off++) {
+      const pool = rows.map(r => raw[r.t].offs[off]).filter(Boolean);
+      const exArr = pool.map(m => m.excess), mnArr = pool.map(m => m.mans), vrArr = pool.map(m => m.volR);
+      for (const row of rows) {
+        const m = raw[row.t].offs[off];
+        if (!m) { row.scoreHist.push(null); continue; }
+        let sc;
+        if (raw[row.t].lowLiq) {
+          sc = 55 * percentile(m.excess, exArr) + 25 * percentile(m.mans, mnArr) + 20 * m.persist;
+        } else {
+          sc = 40 * percentile(m.excess, exArr) + 20 * percentile(m.mans, mnArr)
+             + 15 * percentile(m.volR, vrArr)
+             + 15 * clamp((m.upVol - 0.3) / 0.4, 0, 1)
+             + 10 * m.persist;
+        }
+        row.scoreHist.push(sc);
+      }
+    }
+    for (const row of rows) {
+      const hist = row.scoreHist.filter(v => v !== null);
+      const k = 2 / (3 + 1);
+      let ema = null, emaPrev = null;
+      for (let i = 0; i < hist.length; i++) {
+        emaPrev = ema;
+        ema = ema === null ? hist[i] : hist[i] * k + ema * (1 - k);
+      }
+      row.score = ema ?? 0;
+      row.scorePrev = emaPrev ?? row.score;
+      row.spark = hist;
+    }
+    // ティア（上位3=S / 下位3=W）＋2日連続ヒステリシス
+    const tierOf = (list, key) => {
+      const sorted = [...list].sort((a, b) => b[key] - a[key]);
+      const map = {};
+      sorted.forEach((r, i) => {
+        map[r.t] = i < 3 ? 'S' : (i >= sorted.length - 3 ? 'W' : 'M');
+      });
+      return map;
+    };
+    const today = tierOf(rows, 'score');
+    const yesterday = tierOf(rows, 'scorePrev');
+    const stored = Store.get('sectorTier.' + mkt, {});
+    for (const row of rows) {
+      const t1 = today[row.t], t0 = yesterday[row.t];
+      row.tier = (t1 === t0) ? t1 : (stored[row.t] || t1);
+      stored[row.t] = row.tier;
+      row.inflow = row.score >= 70 && row.excess21 > 0 && (row.lowLiq || (row.volR ?? 0) > 1.0);
+    }
+    Store.set('sectorTier.' + mkt, stored);
+    rows.sort((a, b) => b.score - a.score);
+    return rows;
+  },
+  /* セクターETFティッカー → 平滑スコア のマップ */
+  flowMap() {
+    if (this._cache) return this._cache;
+    const map = {};
+    for (const mkt of ['JP', 'US']) {
+      for (const r of this.compute(mkt)) map[r.t] = r;
+    }
+    this._cache = map;
+    return map;
+  },
+  invalidate() { this._cache = null; }
+};
+
+/* ---------------- ファンダメンタル評価 ---------------- */
+const FUNDA_CHECKS = [
+  { id: 'rev', label: '直近四半期が増収', pts: 7 },
+  { id: 'prof', label: '直近四半期が増益', pts: 8 },
+  { id: 'prog', label: '通期計画への進捗率が標準以上', pts: 10 },
+  { id: 'guide', label: '会社計画の上方修正 or 強気ガイダンス', pts: 10 },
+  { id: 'theme', label: '明確な材料・テーマがある', pts: 10 },
+  { id: 'buyback', label: '自社株買い・増配の発表あり', pts: 8 },
+  { id: 'bad', label: '悪材料あり（減益・下方修正・希薄化）', pts: -15 },
+];
+const Funda = {
+  manual(t) { return Store.get('funda', {})[t] || { checks: {}, memo: '' }; },
+  saveManual(t, obj) {
+    const all = Store.get('funda', {});
+    all[t] = { ...obj, updatedAt: Date.now() };
+    Store.set('funda', all);
+  },
+  autoScore(info) {
+    if (!info) return { pts: 0, detail: [] };
+    const detail = [];
+    let pts = 0;
+    const add = (label, p, note) => { pts += p; detail.push({ label, p, note }); };
+    const per = info.per;
+    if (per === null || per === undefined) add('PER', 0, '未取得');
+    else if (per > 0 && per < 15) add('PER', 10, per + '倍');
+    else if (per < 25) add('PER', 6, per + '倍');
+    else if (per < 40) add('PER', 3, per + '倍');
+    else add('PER', 0, per + '倍（割高/赤字）');
+    const pbr = info.pbr;
+    if (pbr === null || pbr === undefined) add('PBR', 0, '未取得');
+    else if (pbr < 1) add('PBR', 8, pbr + '倍');
+    else if (pbr < 2) add('PBR', 6, pbr + '倍');
+    else if (pbr < 4) add('PBR', 3, pbr + '倍');
+    else add('PBR', 0, pbr + '倍');
+    const dy = info.dy;
+    if (dy === null || dy === undefined || dy <= 0) add('配当利回り', 0, dy ? dy + '%' : 'なし/未取得');
+    else if (dy > 3) add('配当利回り', 7, dy + '%');
+    else if (dy >= 1.5) add('配当利回り', 5, dy + '%');
+    else add('配当利回り', 2, dy + '%');
+    let mcapY = info.mcap || 0;
+    if (info.mkt === 'US') mcapY *= DataHub.usdjpy();
+    if (mcapY >= 1e12) add('時価総額', 5, Fmt.yen(mcapY));
+    else if (mcapY >= 1e11) add('時価総額', 4, Fmt.yen(mcapY));
+    else if (mcapY >= 3e10) add('時価総額', 3, Fmt.yen(mcapY));
+    else add('時価総額', 1, Fmt.yen(mcapY));
+    // 対セクターPER割安度
+    if (per > 0 && DataHub.summary) {
+      const peers = DataHub.summary.stocks.filter(s => s.sec === info.sec && s.per > 0).map(s => s.per);
+      const pct = percentile(per, peers);
+      if (pct <= 0.34) add('セクター内PER割安度', 10, '下位' + Math.round(pct * 100) + '%');
+      else if (pct <= 0.67) add('セクター内PER割安度', 5, '中位');
+      else add('セクター内PER割安度', 0, '上位（割高圏）');
+    } else add('セクター内PER割安度', 0, '判定不可');
+    return { pts, detail };
+  },
+  score(t, info) {
+    const auto = this.autoScore(info);
+    const man = this.manual(t);
+    let manPts = 0;
+    for (const c of FUNDA_CHECKS) if (man.checks[c.id]) manPts += c.pts;
+    const total = clamp(auto.pts + manPts, 0, 100);
+    const touched = Object.values(man.checks || {}).some(Boolean);
+    return { auto: auto.pts, autoDetail: auto.detail, manual: manPts, total, touched, memo: man.memo || '' };
+  },
+  label(total) { return total >= 70 ? '強い' : total >= 50 ? '普通' : '弱い'; }
+};
+
+/* ---------------- スクリーナー ---------------- */
+const Screener = {
+  GATE_TURNOVER: { JP: 5e8, US: 20e6 },
+  run(mkt, type) { // type: 'swing' | 'long'
+    if (!DataHub.summary) return [];
+    const flow = SectorFlow.flowMap();
+    const all = DataHub.summary.stocks.filter(s => s.mkt === mkt);
+    const rocKey = type === 'swing' ? 'roc20' : 'roc60';
+    const rocPool = all.map(s => s[rocKey]);
+    const upVolPool = all.map(s => s.upVol);
+    const out = [];
+    for (const s of all) {
+      const fl = flow[s.sec];
+      const flowScore = fl ? fl.score : 0;
+      if (type === 'swing') {
+        if (!(s.c > s.sma75)) continue;
+        if (flowScore < 60) continue;
+        if ((s.turn20 || 0) < this.GATE_TURNOVER[mkt]) continue;
+        // 押し目形成の質
+        let pq = 0;
+        if (s.atr > 0 && s.sma25) {
+          const d = (s.c - s.sma25) / s.atr;
+          if (d >= -1.0 && d <= 1.5) pq = 1.0;
+          else if (d > 1.5 && d <= 3.0) pq = 1.0 - (d - 1.5) / 1.5 * 0.7;
+          else if (d < -1.0 && d >= -2.5) pq = 1.0 - (-d - 1.0) / 1.5;
+          else pq = 0;
+          const rsi = s.rsi;
+          if (rsi >= 40 && rsi <= 55) pq *= 1.0;
+          else if (rsi > 55 && rsi <= 65) pq *= 0.8;
+          else pq *= 0.5;
+        }
+        const score = 30 * percentile(s.roc20, rocPool)
+                    + 20 * clamp(((s.volR ?? 1) - 1) / 0.8, 0, 1)
+                    + 30 * pq
+                    + 10 * percentile(s.upVol, upVolPool)
+                    + 10 * (flowScore / 100);
+        out.push({ ...s, score, flowScore, pq });
+      } else {
+        if (!(s.c > s.sma200 && s.s200up)) continue;
+        if ((s.turn20 || 0) < this.GATE_TURNOVER[mkt]) continue;
+        const funda = Funda.score(s.t, s);
+        const nearHi = 1 - clamp((s.hi52 - s.c) / s.hi52 / 0.25, 0, 1);
+        const score = 25 * nearHi
+                    + 20 * percentile(s.roc60, rocPool)
+                    + 15 * clamp((s.gcDays || 0) / 120, 0, 1)
+                    + 25 * (funda.total / 100)
+                    + 15 * (flowScore / 100);
+        out.push({ ...s, score, flowScore, fundaTotal: funda.total, nearHi });
+      }
+    }
+    out.sort((a, b) => b.score - a.score);
+    return out.slice(0, 30);
+  }
+};
+
+/* ---------------- トレードプラン生成エンジン ----------------
+ * テクニカル（フィボ×コンフルエンス）→ エントリー3分割・逆指値・分割利確・
+ * ポジションサイズ・リスクリワードまでを一括計算する。 */
+const PlanEngine = {
+  PARAMS: {
+    swing: {
+      entryFibs: [0.382, 0.5, 0.618], weights: [0.4, 0.3, 0.3],
+      slBuf: 0.5, exitAlloc: [0.5, 0.3, 0.2], minRR: 1.5,
+      hold: '2〜8週間', trailNote: 'T2到達後は残りをトレーリング（SMA25割れ or 高値−2.5×ATRで手仕舞い）'
+    },
+    long: {
+      entryFibs: [0.5, 0.618, 0.786], weights: [0.3, 0.3, 0.4],
+      slBuf: 1.0, exitAlloc: [0.3, 0.3, 0.4], minRR: 2.0,
+      hold: '3〜12ヶ月', trailNote: 'T3到達後も伸びる場合はSMA75割れまで保有継続も可'
+    }
+  },
+  generate(bars, opts) {
+    const { mode, mkt, settings, info } = opts;
+    const P = this.PARAMS[mode];
+    const warnings = [];
+    const n = bars.c.length;
+    if (n < 60) return { error: 'データが不足しています（60営業日以上必要）' };
+    const cNow = bars.c[n - 1];
+    const atrArr = Ind.atr(bars, 14);
+    const atr = atrArr[n - 1];
+    if (!atr || atr <= 0) return { error: 'ATRを計算できません' };
+    const pivots = ZigZag.detect(bars, mode);
+    const swing = Fibo.pickSwing(bars, pivots, mode);
+    if (!swing) return { error: '有効なスイング（安値→高値）を検出できません。上昇トレンドが形成されていない可能性があります。' };
+    const { L, H } = swing;
+    const fib = Fibo.levels(L, H);
+    if (swing.outOfRange) warnings.push('現在値がフィボナッチ押し目レンジ（23.6〜78.6%）の外です。押し目待ち、またはトレンド転換に注意。');
+    if (swing.retr !== null && swing.retr > 0.65) warnings.push('すでに61.8%超まで深く押しています。トレンド崩れのリスクに注意。');
+    if (info && info.splitWarn) warnings.push('過去300日以内に株式分割等の大変動を検出。フィボ・指標が歪んでいる可能性があります。');
+
+    // コンフルエンス候補（SMA・水平線）
+    const sma25 = Ind.sma(bars.c, 25)[n - 1];
+    const sma75 = Ind.sma(bars.c, 75)[n - 1];
+    const sma200 = n >= 200 ? Ind.sma(bars.c, 200)[n - 1] : null;
+    const hlines = Levels.detect(bars, pivots);
+    const cands = [];
+    if (mode === 'swing' && sma25) cands.push({ price: sma25, label: 'SMA25' });
+    if (sma75) cands.push({ price: sma75, label: 'SMA75' });
+    if (mode === 'long' && sma200) cands.push({ price: sma200, label: 'SMA200' });
+    for (const h of hlines) cands.push({ price: h.price, label: `サポレジ帯(${h.touches}回)` });
+
+    // エントリー3スライス
+    let entries = P.entryFibs.map((f, i) => {
+      let price = fib.retr[f];
+      let conf = ['フィボ' + (f * 100).toFixed(1) + '%'];
+      let best = null;
+      for (const cd of cands) {
+        const dist = Math.abs(cd.price - price);
+        if (dist <= 0.5 * atr && (!best || dist < Math.abs(best.price - price))) best = cd;
+      }
+      if (best) { conf.push(best.label); price = best.price; }
+      // 同一ATR圏の他コンフルエンスもラベルに追加
+      for (const cd of cands) {
+        if (cd !== best && Math.abs(cd.price - price) <= 0.5 * atr) conf.push(cd.label);
+      }
+      return { fib: f, price: Tick.floor(price, mkt), w: P.weights[i], conf };
+    });
+    // すでに押している場合: 現在値より上の指値は現在値に置換
+    if (cNow < entries[0].price) {
+      entries[0] = { ...entries[0], price: Tick.floor(cNow, mkt), conf: ['現在値（成行相当）'], atMarket: true };
+      warnings.push('現在値がフィボ' + (entries[0].fib * 100).toFixed(1) + '%水準を下回っているため、1本目は現在値でのエントリーに置き換えました。');
+    }
+    // 順序整合: 上から下へ（同値・逆転はマージ）
+    entries.sort((a, b) => b.price - a.price);
+    const merged = [];
+    for (const e of entries) {
+      if (merged.length && merged[merged.length - 1].price <= e.price) {
+        merged[merged.length - 1].w += e.w;
+        merged[merged.length - 1].conf = [...new Set([...merged[merged.length - 1].conf, ...e.conf])];
+      } else merged.push({ ...e });
+    }
+    entries = merged;
+    const eavg = entries.reduce((s, e) => s + e.price * e.w, 0) / entries.reduce((s, e) => s + e.w, 0);
+
+    // 逆指値
+    // swing: 78.6%まで押したら「押し目買いシナリオ無効」とみなし、その直下に置く
+    //        （スイング起点安値まで下げると損切り幅が広すぎRRが成立しないため）
+    // long : スイング起点安値の下（ポジショントレードの本来の無効化水準）
+    const deepest = entries[entries.length - 1].price;
+    let slBase, slBasis;
+    if (mode === 'swing') {
+      slBase = Math.min(fib.retr[0.786], deepest);
+      slBasis = 'フィボ78.6%割れ＝押し目シナリオ無効';
+    } else {
+      slBase = Math.min(L.price, deepest);
+      slBasis = 'スイング起点安値割れ＝上昇トレンド無効';
+    }
+    let sl = Tick.floor(slBase - P.slBuf * atr, mkt);
+    let slAlt = null;
+    if (eavg - sl > 4 * atr) {
+      slAlt = Tick.floor(eavg - 3 * atr, mkt);
+      warnings.push('損切り幅がATRの4倍を超えています（ボラティリティ過大）。代替案: ' + Fmt.price(slAlt, mkt) + '（平均取得単価−3×ATR）も検討。');
+    }
+    if (cNow <= sl) return { error: '現在値がすでに逆指値水準を下回っています。このスイングでのプランは無効です。', pivots, swing, fib };
+
+    // 利確ターゲット
+    const t1 = Tick.floor(H.price, mkt);
+    const t2 = Tick.floor(fib.ext[1.272], mkt);
+    const t3 = Tick.floor(fib.ext[1.618], mkt);
+    const targets = mode === 'swing'
+      ? [{ label: 'T1 直近高値', price: t1, alloc: P.exitAlloc[0] },
+         { label: 'T2 フィボ127.2%', price: t2, alloc: P.exitAlloc[1] },
+         { label: '残り トレーリング', price: t2, alloc: P.exitAlloc[2], trail: true }]
+      : [{ label: 'T1 直近高値', price: t1, alloc: P.exitAlloc[0] },
+         { label: 'T2 フィボ127.2%', price: t2, alloc: P.exitAlloc[1] },
+         { label: 'T3 フィボ161.8%', price: t3, alloc: P.exitAlloc[2] }];
+
+    // ポジションサイズ（円建てリスク管理）
+    const usdjpy = DataHub.usdjpy();
+    const fxRate = mkt === 'US' ? usdjpy : 1;
+    const riskAmt = settings.capital * settings.riskPct / 100;
+    const perShareRisk = (eavg - sl) * fxRate;
+    const qTotal = riskAmt / perShareRisk;
+    const lot = mkt === 'JP' ? 100 : 1;
+    let totalQty = 0;
+    for (const e of entries) {
+      e.qty = Math.floor(qTotal * e.w / lot) * lot;
+      totalQty += e.qty;
+    }
+    let sizeNote = null;
+    if (totalQty === 0) {
+      // 3分割では単元に届かない場合: 中間水準1本のみの縮小案
+      const mid = entries[Math.min(1, entries.length - 1)];
+      const needRisk = (mid.price - sl) * fxRate * lot;
+      const needPct = needRisk / settings.capital * 100;
+      if (needRisk <= riskAmt) {
+        // リスク予算内に収まるなら自動縮小（分割なし・中間水準に1本指値）
+        mid.qty = lot;
+        totalQty = lot;
+        sizeNote = `3分割では単元（${lot}株）に届かないため、${Fmt.price(mid.price, mkt)}（中間水準）への${lot}株1本指値に縮小しました` +
+          `（リスク${Fmt.yen(needRisk)}＝資金の${needPct.toFixed(2)}%）。`;
+      } else {
+        sizeNote = `リスク${settings.riskPct}%（${Fmt.yen(riskAmt)}）では最小単位も買えません。` +
+          `${Fmt.price(mid.price, mkt)}で${lot}株のみ買う場合のリスクは${Fmt.yen(needRisk)}（資金の${needPct.toFixed(2)}%）です。リスク許容度の見直しか見送りを。`;
+      }
+    }
+    // 実際のリスク・必要資金
+    const eavgActual = totalQty > 0 ? entries.reduce((s, e) => s + e.price * e.qty, 0) / totalQty : eavg;
+    const riskActual = totalQty * (eavgActual - sl) * fxRate;
+    const capitalNeeded = entries.reduce((s, e) => s + e.price * (e.qty || 0), 0) * fxRate;
+
+    // リスクリワード
+    const exitAvg = targets.reduce((s, t) => s + t.price * t.alloc, 0);
+    const grossPS = targets.reduce((s, t) => s + (t.price - eavg) * t.alloc, 0);
+    const feePS = settings.feePct / 100 * (eavg + exitAvg) / 2;
+    const rr = grossPS / (eavg - sl);
+    const rrEff = (grossPS - feePS) / (eavg - sl);
+    const verdict = rr >= 2.5 ? { key: 'good', label: '良好' }
+      : rr >= P.minRR ? { key: 'ok', label: '可' }
+      : { key: 'avoid', label: '見送り推奨' };
+    if (verdict.key === 'avoid') warnings.push(`リスクリワード比 ${rr.toFixed(2)} が基準（${P.minRR}）未満です。より深い押し目を待つか、見送りを推奨。`);
+
+    return {
+      mode, mkt, cNow, atr, pivots, swing, fib, hlines,
+      entries, eavg, sl, slAlt, slBasis, targets, rr, rrEff, verdict,
+      riskAmt, riskActual, totalQty, capitalNeeded, sizeNote, warnings,
+      usdjpy: mkt === 'US' ? usdjpy : null,
+      hold: P.hold, trailNote: P.trailNote,
+      zone: { top: entries[0].price, bottom: entries[entries.length - 1].price }
+    };
+  }
+};
+
+/* ---------------- ジャーナル統計 ---------------- */
+const Journal = {
+  plans() { return Store.get('plans', []); },
+  savePlans(p) { Store.set('plans', p); },
+  stats() {
+    const closed = this.plans().filter(p => p.status === 'closed' && p.result);
+    const rs = closed.map(p => p.result.r).filter(r => isFinite(r));
+    if (!rs.length) return null;
+    const wins = rs.filter(r => r > 0);
+    const losses = rs.filter(r => r <= 0);
+    const winRate = wins.length / rs.length;
+    const avgWin = wins.length ? wins.reduce((a, b) => a + b, 0) / wins.length : 0;
+    const avgLoss = losses.length ? Math.abs(losses.reduce((a, b) => a + b, 0) / losses.length) : 0;
+    const expectancy = winRate * avgWin - (1 - winRate) * avgLoss;
+    const grossWin = wins.reduce((a, b) => a + b, 0);
+    const grossLoss = Math.abs(losses.reduce((a, b) => a + b, 0));
+    const pf = grossLoss > 0 ? grossWin / grossLoss : Infinity;
+    // R累積の最大ドローダウン
+    let peak = 0, cum = 0, maxDD = 0;
+    for (const r of rs) { cum += r; peak = Math.max(peak, cum); maxDD = Math.max(maxDD, peak - cum); }
+    const followed = closed.filter(p => p.result.followed).length;
+    return { n: rs.length, winRate, avgWin, avgLoss, expectancy, pf, maxDD, cumR: cum, followRate: followed / closed.length };
+  }
+};
+/* ---------------- canvasローソク足チャート ----------------
+ * 下層canvas: ローソク足・SMA・出来高・RSI・MACD（データ/ビュー変更時に再描画）
+ * 上層canvas: 十字線・ツールチップ（ポインタ移動ごとに再描画）
+ * 操作: ドラッグ=スクロール / ホイール・2本指ピンチ=ズーム / 長押し or ホバー=十字線 */
+class StockChart {
+  constructor(container, opts = {}) {
+    this.wrap = container;
+    this.onCrosshair = opts.onCrosshair || null;
+    this.base = document.createElement('canvas');
+    this.top = document.createElement('canvas');
+    container.innerHTML = '';
+    container.appendChild(this.base);
+    container.appendChild(this.top);
+    this.ctx = this.base.getContext('2d');
+    this.tctx = this.top.getContext('2d');
+    this.bars = null;
+    this.overlay = null;   // {pivots, swing, fib, hlines, plan}
+    this.view = { count: 120, end: 0 }; // end = 表示末尾index+1
+    this.MARGIN_R = 64;
+    this.MARGIN_B = 20;
+    this._pointers = new Map();
+    this._cross = null;
+    this._bindEvents();
+    this._resizeObs = new ResizeObserver(() => this.resize());
+    this._resizeObs.observe(container);
+  }
+  colors() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = name => cs.getPropertyValue(name).trim();
+    return {
+      up: g('--up'), down: g('--down'), fg: g('--fg'), fg2: g('--fg2'),
+      line: g('--line'), bg: g('--bg2'), accent: g('--accent'),
+      gold: g('--gold'), green: g('--green'), warn: g('--warn')
+    };
+  }
+  setData(bars) {
+    this.bars = bars;
+    const c = bars.c;
+    this.ind = {
+      sma25: Ind.sma(c, 25), sma75: Ind.sma(c, 75),
+      sma200: c.length >= 200 ? Ind.sma(c, 200) : new Array(c.length).fill(null),
+      rsi: Ind.rsi(c, 14), macd: Ind.macd(c), atr: Ind.atr(bars, 14)
+    };
+    this.view.end = c.length;
+    this.view.count = Math.min(120, c.length);
+    this.resize();
+  }
+  setOverlay(ov) { this.overlay = ov; this.render(); }
+  resize() {
+    if (!this.wrap.isConnected) return;
+    const w = this.wrap.clientWidth, h = this.wrap.clientHeight;
+    if (!w || !h) return;
+    const dpr = window.devicePixelRatio || 1;
+    for (const cv of [this.base, this.top]) {
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    }
+    this.W = w; this.H = h; this.dpr = dpr;
+    this.render();
+  }
+  _panes() {
+    const plotH = this.H - this.MARGIN_B;
+    const price = { y: 0, h: plotH * 0.56 };
+    const vol = { y: price.y + price.h, h: plotH * 0.12 };
+    const rsi = { y: vol.y + vol.h, h: plotH * 0.14 };
+    const macd = { y: rsi.y + rsi.h, h: plotH * 0.18 };
+    return { price, vol, rsi, macd };
+  }
+  _xOf(i) {
+    const { count, end } = this.view;
+    const plotW = this.W - this.MARGIN_R;
+    return (i - (end - count)) * (plotW / count) + (plotW / count) / 2;
+  }
+  _iOf(x) {
+    const { count, end } = this.view;
+    const plotW = this.W - this.MARGIN_R;
+    return Math.round(x / (plotW / count) - 0.5) + (end - count);
+  }
+  render() {
+    if (!this.bars || !this.W) return;
+    const ctx = this.ctx, C = this.colors();
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, this.W, this.H);
+    const { count, end } = this.view;
+    const i0 = Math.max(0, end - count), i1 = end;
+    const b = this.bars, panes = this._panes();
+    const plotW = this.W - this.MARGIN_R;
+    const barW = plotW / count;
+    const cw = Math.max(1, Math.min(barW * 0.7, 14));
+
+    // ---- 価格スケール（可視範囲＋オーバーレイ水準） ----
+    let lo = Infinity, hi = -Infinity;
+    for (let i = i0; i < i1; i++) { lo = Math.min(lo, b.l[i]); hi = Math.max(hi, b.h[i]); }
+    const range0 = hi - lo || 1;
+    if (this.overlay) {
+      const ovPrices = [];
+      const ov = this.overlay;
+      if (ov.fib) { ovPrices.push(...Object.values(ov.fib.retr), ...Object.values(ov.fib.ext)); }
+      if (ov.plan) { ovPrices.push(ov.plan.sl, ...ov.plan.entries.map(e => e.price), ...ov.plan.targets.map(t => t.price)); }
+      for (const p of ovPrices) {
+        if (p > lo - range0 && p < hi + range0) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
+      }
+    }
+    const pad = (hi - lo) * 0.06 || 1;
+    lo -= pad; hi += pad;
+    const pr = panes.price;
+    const yP = v => pr.y + pr.h - (v - lo) / (hi - lo) * pr.h;
+    this._yP = yP; this._priceLo = lo; this._priceHi = hi;
+    this._i0 = i0; this._i1 = i1;
+
+    // ---- グリッド＆価格軸 ----
+    ctx.font = '10px sans-serif';
+    ctx.textBaseline = 'middle';
+    const step = this._niceStep((hi - lo) / 5);
+    ctx.strokeStyle = C.line; ctx.fillStyle = C.fg2; ctx.lineWidth = 0.5;
+    for (let v = Math.ceil(lo / step) * step; v < hi; v += step) {
+      const y = yP(v);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
+      ctx.fillText(Fmt.num(v, v < 10 ? 2 : v < 100 ? 1 : 0), plotW + 4, y);
+    }
+    // 日付軸
+    ctx.textAlign = 'center';
+    const dateEvery = Math.ceil(count / Math.max(2, Math.floor(plotW / 74)));
+    for (let i = i0; i < i1; i++) {
+      if ((i - i0) % dateEvery !== 0) continue;
+      const s = String(b.d[i]);
+      ctx.fillText(s.slice(4, 6) + '/' + s.slice(6, 8), this._xOf(i), this.H - this.MARGIN_B / 2);
+    }
+    ctx.textAlign = 'left';
+
+    // ---- オーバーレイ: 水平サポレジ帯・フィボ・プラン ----
+    if (this.overlay) this._renderOverlay(ctx, C, plotW, yP, lo, hi);
+
+    // ---- ローソク足 ----
+    for (let i = i0; i < i1; i++) {
+      const x = this._xOf(i);
+      const up = b.c[i] >= b.o[i];
+      ctx.strokeStyle = ctx.fillStyle = up ? C.up : C.down;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, yP(b.h[i])); ctx.lineTo(x, yP(b.l[i])); ctx.stroke();
+      const yO = yP(b.o[i]), yC = yP(b.c[i]);
+      const top = Math.min(yO, yC), hgt = Math.max(Math.abs(yC - yO), 1);
+      if (up) { ctx.fillStyle = C.bg; ctx.strokeRect(x - cw / 2, top, cw, hgt); ctx.fillRect(x - cw / 2 + .5, top + .5, cw - 1, hgt - 1); ctx.strokeStyle = C.up; ctx.strokeRect(x - cw / 2, top, cw, hgt); }
+      else ctx.fillRect(x - cw / 2, top, cw, hgt);
+    }
+    // SMA
+    const smaDefs = [['sma25', C.gold], ['sma75', C.accent], ['sma200', '#a78bfa']];
+    for (const [key, color] of smaDefs) {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.beginPath();
+      let started = false;
+      for (let i = i0; i < i1; i++) {
+        const v = this.ind[key][i];
+        if (v === null) continue;
+        const x = this._xOf(i), y = yP(v);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    // ZigZagライン
+    if (this.overlay && this.overlay.pivots) {
+      ctx.strokeStyle = C.fg2; ctx.lineWidth = 1;
+      const pv = this.overlay.pivots;
+      for (let k = 1; k < pv.length; k++) {
+        ctx.setLineDash(pv[k].provisional ? [4, 4] : []);
+        ctx.beginPath();
+        ctx.moveTo(this._xOf(pv[k - 1].i), yP(pv[k - 1].price));
+        ctx.lineTo(this._xOf(pv[k].i), yP(pv[k].price));
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    // ---- 出来高 ----
+    const vol = panes.vol;
+    let vMax = 0;
+    for (let i = i0; i < i1; i++) vMax = Math.max(vMax, b.v[i]);
+    for (let i = i0; i < i1; i++) {
+      const x = this._xOf(i);
+      ctx.fillStyle = (b.c[i] >= b.o[i] ? C.up : C.down) + '99';
+      const h = vMax ? b.v[i] / vMax * vol.h * 0.9 : 0;
+      ctx.fillRect(x - cw / 2, vol.y + vol.h - h, cw, h);
+    }
+    ctx.fillStyle = C.fg2; ctx.fillText('出来高', 4, vol.y + 8);
+
+    // ---- RSI ----
+    const rs = panes.rsi;
+    ctx.strokeStyle = C.line; ctx.lineWidth = 0.5;
+    ctx.strokeRect(0, rs.y, plotW, rs.h);
+    const yR = v => rs.y + rs.h - v / 100 * rs.h;
+    for (const lv of [30, 50, 70]) {
+      ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(0, yR(lv)); ctx.lineTo(plotW, yR(lv)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillText(String(lv), plotW + 4, yR(lv));
+    }
+    ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 1.2; ctx.beginPath();
+    let st = false;
+    for (let i = i0; i < i1; i++) {
+      const v = this.ind.rsi[i];
+      if (v === null) continue;
+      const x = this._xOf(i);
+      if (!st) { ctx.moveTo(x, yR(v)); st = true; } else ctx.lineTo(x, yR(v));
+    }
+    ctx.stroke();
+    ctx.fillStyle = C.fg2; ctx.fillText('RSI(14)', 4, rs.y + 8);
+
+    // ---- MACD ----
+    const mc = panes.macd, macd = this.ind.macd;
+    let mMax = 0;
+    for (let i = i0; i < i1; i++) {
+      for (const v of [macd.line[i], macd.signal[i], macd.hist[i]]) if (v !== null) mMax = Math.max(mMax, Math.abs(v));
+    }
+    mMax = mMax || 1;
+    const yM = v => mc.y + mc.h / 2 - v / mMax * (mc.h / 2) * 0.9;
+    ctx.strokeStyle = C.line; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(0, yM(0)); ctx.lineTo(plotW, yM(0)); ctx.stroke();
+    for (let i = i0; i < i1; i++) {
+      const v = macd.hist[i];
+      if (v === null) continue;
+      const x = this._xOf(i);
+      ctx.fillStyle = (v >= 0 ? C.up : C.down) + '88';
+      ctx.fillRect(x - cw / 2, Math.min(yM(0), yM(v)), cw, Math.abs(yM(v) - yM(0)));
+    }
+    for (const [arr, color] of [[macd.line, C.accent], [macd.signal, C.warn]]) {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.1; ctx.beginPath();
+      let s2 = false;
+      for (let i = i0; i < i1; i++) {
+        const v = arr[i];
+        if (v === null) continue;
+        const x = this._xOf(i);
+        if (!s2) { ctx.moveTo(x, yM(v)); s2 = true; } else ctx.lineTo(x, yM(v));
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = C.fg2; ctx.fillText('MACD(12,26,9)', 4, mc.y + 8);
+    this._renderCross();
+  }
+  _renderOverlay(ctx, C, plotW, yP, lo, hi) {
+    const ov = this.overlay;
+    ctx.font = '10px sans-serif';
+    // 水平サポレジ帯
+    if (ov.hlines) {
+      for (const h of ov.hlines) {
+        if (h.price < lo || h.price > hi) continue;
+        ctx.fillStyle = 'rgba(154,163,178,0.10)';
+        const bw = (this.ind.atr[this.bars.c.length - 1] || 0) * 0.4;
+        ctx.fillRect(0, yP(h.price + bw / 2), plotW, Math.max(2, yP(h.price - bw / 2) - yP(h.price + bw / 2)));
+      }
+    }
+    // フィボナッチ
+    if (ov.fib && ov.swing) {
+      const { L, H } = ov.swing;
+      ctx.strokeStyle = C.gold; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(this._xOf(L.i), yP(L.price)); ctx.lineTo(this._xOf(H.i), yP(H.price)); ctx.stroke();
+      ctx.setLineDash([]);
+      const drawLv = (v, label, color) => {
+        if (v < lo || v > hi) return;
+        const y = yP(v);
+        ctx.strokeStyle = color; ctx.lineWidth = 0.8; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = color;
+        ctx.fillText(label + ' ' + Fmt.num(v, v < 100 ? 2 : 0), plotW - 150, y - 3);
+      };
+      for (const [r, v] of Object.entries(ov.fib.retr)) drawLv(v, (r * 100).toFixed(1) + '%', C.gold);
+      for (const [r, v] of Object.entries(ov.fib.ext)) drawLv(v, (r * 100).toFixed(1) + '%', C.green);
+    }
+    // プラン（ゾーン・E・SL・T）
+    if (ov.plan) {
+      const p = ov.plan;
+      ctx.fillStyle = 'rgba(76,141,255,0.10)';
+      ctx.fillRect(0, yP(p.zone.top), plotW, Math.max(2, yP(p.zone.bottom) - yP(p.zone.top)));
+      const line = (v, label, color, dash) => {
+        if (v < lo || v > hi) return;
+        const y = yP(v);
+        ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.setLineDash(dash || []);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = color;
+        ctx.fillText(label, 4, y - 5);
+      };
+      p.entries.forEach((e, i) => line(e.price, `E${i + 1} ${Fmt.num(e.price, e.price < 100 ? 2 : 0)}` + (e.qty ? ` ×${e.qty}株` : ''), C.accent));
+      line(p.sl, `損切り ${Fmt.num(p.sl, p.sl < 100 ? 2 : 0)}`, C.warn, [6, 3]);
+      p.targets.forEach((t, i) => { if (!t.trail) line(t.price, `${t.label} ${Fmt.num(t.price, t.price < 100 ? 2 : 0)}`, C.green, [6, 3]); });
+    }
+  }
+  _niceStep(raw) {
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    return (r < 1.5 ? 1 : r < 3.5 ? 2 : r < 7.5 ? 5 : 10) * mag;
+  }
+  /* ---- 十字線（上層canvas） ---- */
+  _renderCross() {
+    const ctx = this.tctx;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, this.W, this.H);
+    if (!this._cross || !this.bars) { if (this.onCrosshair) this.onCrosshair(null); return; }
+    const C = this.colors();
+    const i = clamp(this._iOf(this._cross.x), this._i0, this._i1 - 1);
+    const x = this._xOf(i);
+    ctx.strokeStyle = C.fg2; ctx.lineWidth = 0.7; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, this.H - this.MARGIN_B); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, this._cross.y); ctx.lineTo(this.W - this.MARGIN_R, this._cross.y); ctx.stroke();
+    ctx.setLineDash([]);
+    // 価格ラベル
+    const v = this._priceLo + (1 - (this._cross.y - this._panes().price.y) / this._panes().price.h) * (this._priceHi - this._priceLo);
+    if (this._cross.y < this._panes().price.y + this._panes().price.h) {
+      ctx.fillStyle = C.bg; ctx.strokeStyle = C.fg2;
+      ctx.fillRect(this.W - this.MARGIN_R, this._cross.y - 9, this.MARGIN_R, 18);
+      ctx.strokeRect(this.W - this.MARGIN_R, this._cross.y - 9, this.MARGIN_R, 18);
+      ctx.fillStyle = C.fg; ctx.font = '10px sans-serif'; ctx.textBaseline = 'middle';
+      ctx.fillText(Fmt.num(v, v < 100 ? 2 : 0), this.W - this.MARGIN_R + 4, this._cross.y);
+    }
+    if (this.onCrosshair) {
+      this.onCrosshair({
+        i, d: this.bars.d[i], o: this.bars.o[i], h: this.bars.h[i], l: this.bars.l[i],
+        c: this.bars.c[i], v: this.bars.v[i],
+        sma25: this.ind.sma25[i], sma75: this.ind.sma75[i], sma200: this.ind.sma200[i],
+        rsi: this.ind.rsi[i], atr: this.ind.atr[i]
+      });
+    }
+  }
+  /* ---- 入力イベント ---- */
+  _bindEvents() {
+    const el = this.top;
+    el.style.touchAction = 'none';
+    let longPressTimer = null;
+    const pos = ev => {
+      const r = el.getBoundingClientRect();
+      return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+    };
+    el.addEventListener('pointerdown', ev => {
+      el.setPointerCapture(ev.pointerId);
+      this._pointers.set(ev.pointerId, pos(ev));
+      if (this._pointers.size === 1) {
+        this._drag = { ...pos(ev), end0: this.view.end, moved: false };
+        if (ev.pointerType === 'touch') {
+          longPressTimer = setTimeout(() => {
+            this._crossMode = true;
+            this._cross = pos(ev);
+            this._renderCross();
+          }, 450);
+        }
+      } else if (this._pointers.size === 2) {
+        clearTimeout(longPressTimer);
+        this._crossMode = false; this._cross = null;
+        const pts = [...this._pointers.values()];
+        this._pinch = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), count0: this.view.count };
+        this._drag = null;
+      }
+    });
+    el.addEventListener('pointermove', ev => {
+      const p = pos(ev);
+      if (this._pointers.has(ev.pointerId)) this._pointers.set(ev.pointerId, p);
+      if (this._pinch && this._pointers.size === 2) {
+        const pts = [...this._pointers.values()];
+        const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        const newCount = clamp(Math.round(this._pinch.count0 * this._pinch.dist / Math.max(d, 20)), 30, Math.max(30, this.bars.c.length));
+        if (newCount !== this.view.count) { this.view.count = newCount; this._clampView(); this.render(); }
+        return;
+      }
+      if (this._crossMode) { this._cross = p; this._renderCross(); return; }
+      if (this._drag && this._pointers.size === 1) {
+        const dx = p.x - this._drag.x;
+        if (Math.abs(dx) > 4) { this._drag.moved = true; clearTimeout(longPressTimer); }
+        const barW = (this.W - this.MARGIN_R) / this.view.count;
+        const shift = Math.round(dx / barW);
+        const newEnd = clamp(this._drag.end0 - shift, Math.min(this.view.count, this.bars.c.length), this.bars.c.length);
+        if (newEnd !== this.view.end) { this.view.end = newEnd; this.render(); }
+        return;
+      }
+      if (ev.pointerType === 'mouse' && this._pointers.size === 0) {
+        this._cross = p; this._renderCross();
+      }
+    });
+    const up = ev => {
+      clearTimeout(longPressTimer);
+      this._pointers.delete(ev.pointerId);
+      if (this._pointers.size < 2) this._pinch = null;
+      if (this._pointers.size === 0) { this._drag = null; if (ev.pointerType === 'touch') { this._crossMode = false; this._cross = null; this._renderCross(); } }
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerleave', ev => {
+      if (ev.pointerType === 'mouse' && this._pointers.size === 0) { this._cross = null; this._renderCross(); }
+    });
+    el.addEventListener('wheel', ev => {
+      ev.preventDefault();
+      const factor = ev.deltaY > 0 ? 1.15 : 0.87;
+      this.view.count = clamp(Math.round(this.view.count * factor), 30, Math.max(30, this.bars ? this.bars.c.length : 30));
+      this._clampView();
+      this.render();
+    }, { passive: false });
+  }
+  _clampView() {
+    if (!this.bars) return;
+    this.view.count = Math.min(this.view.count, this.bars.c.length);
+    this.view.end = clamp(this.view.end, this.view.count, this.bars.c.length);
+  }
+  destroy() { this._resizeObs.disconnect(); }
+}
+/* ---------------- モーダル ---------------- */
+const Modal = {
+  locked: false,
+  show(html, opts = {}) {
+    this.locked = !!opts.locked;
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('modalBg').classList.add('show');
+  },
+  hide() { this.locked = false; document.getElementById('modalBg').classList.remove('show'); }
+};
+document.getElementById('modalBg').addEventListener('click', ev => {
+  if (ev.target.id === 'modalBg' && !Modal.locked) Modal.hide();
+});
+
+/* ---------------- UI 共通 ---------------- */
+const UI = {
+  current: 'sector',
+  chart: null,
+  chartState: { ticker: null, mode: null, bars: null, plan: null },
+  switchTo(view) {
+    this.current = view;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+    this.render(view);
+  },
+  render(view) {
+    const fn = { sector: renderSector, screener: renderScreener, chart: renderChart, plans: renderPlans, journal: renderJournal, settings: renderSettings }[view];
+    if (fn) fn();
+  },
+  secName(sec) {
+    if (!sec) return '−';
+    const s = DataHub.market && DataHub.market.series[sec];
+    return s ? s.name : sec;
+  },
+  scoreBar(score) {
+    return `<span class="scorebar"><i style="width:${clamp(score, 0, 100)}%"></i></span>${score.toFixed(0)}`;
+  }
+};
+document.getElementById('mainNav').addEventListener('click', ev => {
+  const btn = ev.target.closest('.tab-btn');
+  if (btn) UI.switchTo(btn.dataset.view);
+});
+
+function updateDataBadge() {
+  const el = document.getElementById('dataBadge');
+  const date = DataHub.dataDate();
+  if (DataHub.online) {
+    el.textContent = 'データ: ' + (date || '?');
+    el.classList.remove('offline');
+  } else if (date) {
+    el.textContent = 'オフライン（' + date + 'のデータ）';
+    el.classList.add('offline');
+  } else {
+    el.textContent = 'オフライン（データ未取得）';
+    el.classList.add('offline');
+  }
+}
+
+/* ================= セクタービュー ================= */
+function renderSector() {
+  const el = document.getElementById('view-sector');
+  if (!DataHub.market) {
+    el.innerHTML = `<div class="card"><div class="empty">相場データがありません。<br>ネット接続時に開くと自動取得します（GitHub Pages配信時）。<br>オフラインでは「チャート分析」タブからCSV・コピペで銘柄データを取り込めます。</div></div>`;
+    return;
+  }
+  const mkt = Store.get('ui.sectorMkt', 'JP');
+  const rows = SectorFlow.compute(mkt);
+  const series = DataHub.market.series;
+  // 市況サマリ
+  const idxDefs = [['^N225', '日経平均'], ['1306.T', 'TOPIX ETF'], ['^GSPC', 'S&P500'], ['^IXIC', 'NASDAQ'], ['JPY=X', 'ドル円']];
+  let idxHtml = '';
+  for (const [t, label] of idxDefs) {
+    const s = series[t];
+    if (!s) continue;
+    const n = s.c.length;
+    const chg = s.c[n - 1] / s.c[n - 2] - 1;
+    idxHtml += `<div class="kpi"><div class="v">${Fmt.num(s.c[n - 1], t === 'JPY=X' ? 2 : 0)}</div>
+      <div class="k">${label} <span class="${Fmt.cls(chg)}">${Fmt.pct(chg)}</span></div></div>`;
+  }
+  const retCell = r => `<span class="${Fmt.cls(r)}" style="background:${heatColor(r)}">${Fmt.pct(r, 1)}</span>`;
+  const cards = rows.map(r => `
+    <div class="sec-card tier-${r.tier}" data-sec="${r.t}">
+      <div class="nm"><span>${Fmt.esc(r.name)}</span>
+        ${r.inflow ? '<span class="badge flow">資金流入中</span>' : r.tier === 'S' ? '<span class="badge ok">強</span>' : r.tier === 'W' ? '<span class="badge bad">弱</span>' : ''}
+      </div>
+      <div class="score" style="color:${r.score >= 70 ? 'var(--gold)' : r.score >= 45 ? 'var(--fg)' : 'var(--fg2)'}">${r.score.toFixed(0)}<small style="font-size:11px;color:var(--fg2)"> /100</small></div>
+      <div class="rets">${retCell(r.r5)}${retCell(r.r21)}${retCell(r.r63)}</div>
+      <div class="muted" style="font-size:10.5px;margin-top:4px">1週 / 1ヶ月 / 3ヶ月${r.lowLiq ? '・価格ベース評価' : ''}</div>
+    </div>`).join('');
+  el.innerHTML = `
+    <div class="card"><div class="kpi-row">${idxHtml}</div></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>セクター資金フロー <span class="sub">相対強度＋出来高から資金の向かい先をスコア化（3日平滑）</span></h2>
+        <div class="seg" id="sectorMktSeg">
+          <button data-mkt="JP" class="${mkt === 'JP' ? 'active' : ''}">日本</button>
+          <button data-mkt="US" class="${mkt === 'US' ? 'active' : ''}">米国</button>
+        </div>
+      </div>
+      <div class="sector-grid" style="margin-top:10px">${cards}</div>
+      <div class="muted" style="font-size:11px;margin-top:10px">スコア≥70かつ1ヶ月超過リターンがプラスのセクターに「資金流入中」を表示。カードをタップするとそのセクターの銘柄をスクリーニングします。</div>
+    </div>`;
+  el.querySelector('#sectorMktSeg').addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (b) { Store.set('ui.sectorMkt', b.dataset.mkt); SectorFlow.invalidate(); renderSector(); }
+  });
+  el.querySelectorAll('.sec-card').forEach(card => card.addEventListener('click', () => {
+    Store.set('ui.scrMkt', mkt);
+    Store.set('ui.scrSector', card.dataset.sec);
+    UI.switchTo('screener');
+  }));
+}
+function heatColor(r) {
+  if (r === null || isNaN(r)) return 'transparent';
+  const a = clamp(Math.abs(r) / 0.08, 0, 1) * 0.45;
+  return r >= 0 ? `rgba(239,68,68,${a})` : `rgba(59,130,246,${a})`;
+}
+
+/* ================= スクリーナービュー ================= */
+function renderScreener() {
+  const el = document.getElementById('view-screener');
+  if (!DataHub.summary) {
+    el.innerHTML = `<div class="card"><div class="empty">銘柄データがありません（オンライン時に自動取得されます）。</div></div>`;
+    return;
+  }
+  const mkt = Store.get('ui.scrMkt', 'JP');
+  const type = Store.get('ui.scrType', 'swing');
+  const secFilter = Store.get('ui.scrSector', '');
+  let rows = Screener.run(mkt, type);
+  if (secFilter) rows = rows.filter(r => r.sec === secFilter);
+  const flow = SectorFlow.flowMap();
+  const secs = [...new Set(DataHub.summary.stocks.filter(s => s.mkt === mkt).map(s => s.sec))]
+    .map(s => ({ t: s, name: UI.secName(s), score: flow[s] ? flow[s].score : 0 }))
+    .sort((a, b) => b.score - a.score);
+  const trHtml = rows.map(s => {
+    const roc = type === 'swing' ? s.roc20 : s.roc60;
+    return `<tr class="stock-row" data-t="${s.t}">
+      <td><b>${s.t.replace('.T', '')}</b> ${Fmt.esc(s.name)}<br><span class="muted" style="font-size:10.5px">${Fmt.esc(UI.secName(s.sec))} <span class="badge flow" style="font-size:9px">${s.flowScore.toFixed(0)}</span></span></td>
+      <td>${UI.scoreBar(s.score)}</td>
+      <td>${Fmt.price(s.c, s.mkt)}</td>
+      <td class="${Fmt.cls(roc)}">${Fmt.pct(roc)}</td>
+      <td>${Fmt.num(s.rsi, 0)}</td>
+      <td>${s.volR ? s.volR.toFixed(2) : '−'}</td>
+      <td>${s.per ? s.per + '倍' : '−'}</td>
+      ${type === 'long' ? `<td>${s.fundaTotal !== undefined ? s.fundaTotal : '−'}</td>` : ''}
+    </tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>スクリーナー <span class="sub">強いセクター内の候補銘柄（上位30）</span></h2>
+        <div class="row">
+          <div class="seg" id="scrTypeSeg">
+            <button data-v="swing" class="${type === 'swing' ? 'active' : ''}">スイング</button>
+            <button data-v="long" class="${type === 'long' ? 'active' : ''}">中長期</button>
+          </div>
+          <div class="seg" id="scrMktSeg">
+            <button data-v="JP" class="${mkt === 'JP' ? 'active' : ''}">日本</button>
+            <button data-v="US" class="${mkt === 'US' ? 'active' : ''}">米国</button>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin:8px 0">
+        <select id="scrSecSel">
+          <option value="">全セクター</option>
+          ${secs.map(s => `<option value="${s.t}" ${s.t === secFilter ? 'selected' : ''}>${Fmt.esc(s.name)}（${s.score.toFixed(0)}）</option>`).join('')}
+        </select>
+        <span class="muted" style="font-size:11px">
+          ${type === 'swing'
+            ? '条件: 75日線より上・セクタースコア60以上・流動性十分。押し目形成中の銘柄が高スコア。'
+            : '条件: 200日線より上＆上向き・流動性十分。52週高値圏・ファンダ良好が高スコア。'}
+        </span>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>銘柄</th><th>スコア</th><th>現在値</th><th>${type === 'swing' ? '20日騰落' : '60日騰落'}</th><th>RSI</th><th>出来高比</th><th>PER</th>${type === 'long' ? '<th>ファンダ</th>' : ''}</tr>
+        ${trHtml || `<tr><td colspan="9" class="empty">条件を満たす銘柄がありません${secFilter ? '（セクター絞り込み中）' : ''}。セクターが弱い局面では無理にエントリーしないのも戦略です。</td></tr>`}
+      </table></div>
+    </div>`;
+  el.querySelector('#scrTypeSeg').addEventListener('click', ev => {
+    const b = ev.target.closest('button'); if (b) { Store.set('ui.scrType', b.dataset.v); renderScreener(); }
+  });
+  el.querySelector('#scrMktSeg').addEventListener('click', ev => {
+    const b = ev.target.closest('button'); if (b) { Store.set('ui.scrMkt', b.dataset.v); Store.set('ui.scrSector', ''); renderScreener(); }
+  });
+  el.querySelector('#scrSecSel').addEventListener('change', ev => {
+    Store.set('ui.scrSector', ev.target.value); renderScreener();
+  });
+  el.querySelectorAll('.stock-row').forEach(tr => tr.addEventListener('click', () => openChart(tr.dataset.t)));
+}
+
+/* ================= チャート分析ビュー ================= */
+function openChart(ticker) {
+  UI.chartState.ticker = ticker;
+  UI.chartState.plan = null;
+  UI.switchTo('chart');
+}
+function renderChart() {
+  const el = document.getElementById('view-chart');
+  const st = UI.chartState;
+  const settings = Settings.load();
+  if (!st.mode) st.mode = settings.defaultMode;
+  const watchlist = Store.get('watchlist', []);
+  const stocks = DataHub.summary ? DataHub.summary.stocks : [];
+  const options = stocks.map(s => `<option value="${s.t.replace('.T', '')} ${Fmt.esc(s.name)}"></option>`).join('');
+  const wlChips = watchlist.map(t => {
+    const info = DataHub.stockInfo(t);
+    return `<button class="btn small wl-chip" data-t="${t}">${info ? Fmt.esc(info.name) : t}</button>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="card">
+      <div class="row">
+        <input type="text" id="tickerSearch" list="tickerList" placeholder="コード or 銘柄名（例: 7203 / トヨタ / AAPL）" style="flex:1;min-width:200px">
+        <datalist id="tickerList">${options}</datalist>
+        <button class="btn" id="importBtn">📥 CSV/コピペ取り込み</button>
+      </div>
+      ${wlChips ? `<div class="row" style="margin-top:8px"><span class="muted" style="font-size:11px">ウォッチ:</span>${wlChips}</div>` : ''}
+    </div>
+    <div id="chartArea"></div>`;
+  el.querySelector('#tickerSearch').addEventListener('change', ev => {
+    const q = ev.target.value.trim().toLowerCase();
+    if (!q) return;
+    const code = q.split(/\s/)[0];
+    let hit = stocks.find(s => s.t.toLowerCase() === code || s.t.replace('.T', '').toLowerCase() === code);
+    if (!hit) hit = stocks.find(s => s.name.toLowerCase().includes(q) || (code && s.t.replace('.T', '').toLowerCase().startsWith(code)));
+    // 取り込み済み銘柄（ユニバース外）も検索
+    if (!hit) {
+      const cache = Store.get('cache.ohlcv', {});
+      const key = Object.keys(cache).find(k => k.toLowerCase() === code || k.replace('.T', '').toLowerCase() === code);
+      if (key) { openChart(key); return; }
+    }
+    if (hit) openChart(hit.t);
+    else alert('銘柄が見つかりません。ユニバース（日経225・S&P100）外の銘柄は「CSV/コピペ取り込み」で追加できます。');
+  });
+  el.querySelector('#importBtn').addEventListener('click', showImportModal);
+  el.querySelectorAll('.wl-chip').forEach(b => b.addEventListener('click', () => openChart(b.dataset.t)));
+  if (st.ticker) loadChartArea(st.ticker);
+  else document.getElementById('chartArea').innerHTML = `<div class="card"><div class="empty">銘柄を検索するか、スクリーナー・セクタータブから選択してください。</div></div>`;
+}
+async function loadChartArea(ticker) {
+  const area = document.getElementById('chartArea');
+  area.innerHTML = `<div class="card"><div class="empty">読み込み中…</div></div>`;
+  const obj = await DataHub.getBars(ticker);
+  if (!obj) {
+    area.innerHTML = `<div class="card"><div class="empty">「${Fmt.esc(ticker)}」のデータを取得できません。<br>オフラインの場合は「CSV/コピペ取り込み」でデータを追加してください。</div></div>`;
+    return;
+  }
+  const st = UI.chartState;
+  st.bars = obj;
+  const info = DataHub.stockInfo(ticker);
+  const mkt = obj.mkt || (info ? info.mkt : (ticker.endsWith('.T') ? 'JP' : 'US'));
+  st.mkt = mkt;
+  const n = obj.c.length;
+  const chg = n >= 2 ? obj.c[n - 1] / obj.c[n - 2] - 1 : 0;
+  const flow = SectorFlow.flowMap();
+  const fl = obj.sec && flow[obj.sec];
+  const watchlist = Store.get('watchlist', []);
+  const inWl = watchlist.includes(ticker);
+  const funda = Funda.score(ticker, info);
+  area.innerHTML = `
+    <div class="card">
+      <div class="ticker-head">
+        <span class="tk-name">${Fmt.esc(obj.name || ticker)} <span class="muted" style="font-size:12px">${ticker.replace('.T', '')}${mkt === 'US' ? '・米国' : ''}</span></span>
+        <span class="tk-price">${Fmt.price(obj.c[n - 1], mkt)} <span class="${Fmt.cls(chg)}" style="font-size:13px">${Fmt.pct(chg)}</span></span>
+        ${fl ? `<span class="badge ${fl.score >= 70 ? 'flow' : fl.score >= 45 ? 'ok' : 'bad'}">${Fmt.esc(fl.name)} ${fl.score.toFixed(0)}</span>` : ''}
+        <button class="btn small" id="wlToggle">${inWl ? '★ ウォッチ中' : '☆ ウォッチ'}</button>
+        <span style="flex:1"></span>
+        <div class="seg" id="modeSeg">
+          <button data-v="swing" class="${st.mode === 'swing' ? 'active' : ''}">スイング</button>
+          <button data-v="long" class="${st.mode === 'long' ? 'active' : ''}">中長期</button>
+        </div>
+      </div>
+      ${info ? `<div class="row muted" style="font-size:12px;gap:14px">
+        <span>PER ${info.per ?? '−'}倍</span><span>PBR ${info.pbr ?? '−'}倍</span>
+        <span>配当 ${info.dy ?? '−'}%</span>
+        <span>時価総額 ${mkt === 'US' ? Fmt.usd(info.mcap) : Fmt.yen(info.mcap)}</span>
+        <span>52週高値 ${Fmt.price(info.hi52, mkt)}</span>
+        <span>ATR ${Fmt.num(info.atr, 1)}</span>
+        ${info.splitWarn ? '<span class="badge warn">分割等の大変動あり</span>' : ''}
+      </div>` : ''}
+      <div id="chartWrap" style="height:440px;margin-top:8px"></div>
+      <div class="chart-legend" id="crossInfo">
+        <span><b style="color:var(--gold)">─</b> SMA25</span><span><b style="color:var(--accent)">─</b> SMA75</span><span><b style="color:#a78bfa">─</b> SMA200</span>
+        <span class="muted">ドラッグ=移動 / ピンチ・ホイール=拡縮 / 長押し=十字線</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="genPlanBtn">⚙️ トレードプラン生成（${st.mode === 'swing' ? 'スイング' : '中長期'}）</button>
+        <button class="btn" id="fundaBtn">📋 ファンダ評価 <span class="badge ${funda.total >= 70 ? 'good' : funda.total >= 50 ? 'ok' : 'bad'}">${funda.total}点 ${Funda.label(funda.total)}</span></button>
+      </div>
+    </div>
+    <div id="planArea"></div>`;
+  // チャート初期化
+  const wrap = document.getElementById('chartWrap');
+  if (UI.chart) UI.chart.destroy();
+  UI.chart = new StockChart(wrap, { onCrosshair: info2 => updateCrossInfo(info2, mkt) });
+  UI.chart.setData(obj);
+  // ZigZag＋フィボは常時表示
+  drawAnalysisOverlay();
+  document.getElementById('modeSeg').addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (b) { st.mode = b.dataset.v; st.plan = null; loadChartArea(ticker); }
+  });
+  document.getElementById('genPlanBtn').addEventListener('click', () => generatePlan());
+  document.getElementById('fundaBtn').addEventListener('click', () => showFundaModal(ticker, info));
+  document.getElementById('wlToggle').addEventListener('click', () => {
+    const wl = Store.get('watchlist', []);
+    const idx = wl.indexOf(ticker);
+    if (idx >= 0) wl.splice(idx, 1); else wl.push(ticker);
+    Store.set('watchlist', wl);
+    loadChartArea(ticker);
+  });
+  if (st.plan && st.plan.ticker === ticker && st.plan.mode === st.mode) renderPlanArea(st.plan);
+}
+function updateCrossInfo(ci, mkt) {
+  const el = document.getElementById('crossInfo');
+  if (!el) return;
+  if (!ci) {
+    el.innerHTML = `<span><b style="color:var(--gold)">─</b> SMA25</span><span><b style="color:var(--accent)">─</b> SMA75</span><span><b style="color:#a78bfa">─</b> SMA200</span>
+      <span class="muted">ドラッグ=移動 / ピンチ・ホイール=拡縮 / 長押し=十字線</span>`;
+    return;
+  }
+  const p = v => Fmt.num(v, v !== null && v < 100 ? 2 : 0);
+  el.innerHTML = `<span><b>${Fmt.dateInt(ci.d)}</b></span>
+    <span>始 ${p(ci.o)} 高 ${p(ci.h)} 安 ${p(ci.l)} 終 <b>${p(ci.c)}</b></span>
+    <span>出来高 ${Fmt.num(ci.v)}</span>
+    <span>SMA25 ${p(ci.sma25)} / 75 ${p(ci.sma75)} / 200 ${p(ci.sma200)}</span>
+    <span>RSI ${ci.rsi === null ? '−' : ci.rsi.toFixed(1)} / ATR ${ci.atr === null ? '−' : ci.atr.toFixed(1)}</span>`;
+}
+function drawAnalysisOverlay() {
+  const st = UI.chartState;
+  if (!st.bars || !UI.chart) return;
+  const pivots = ZigZag.detect(st.bars, st.mode);
+  const swing = Fibo.pickSwing(st.bars, pivots, st.mode);
+  const hlines = Levels.detect(st.bars, pivots);
+  const overlay = { pivots, hlines };
+  if (swing && !swing.outOfRange) {
+    overlay.swing = swing;
+    overlay.fib = Fibo.levels(swing.L, swing.H);
+  } else if (swing) {
+    overlay.swing = swing;
+    overlay.fib = Fibo.levels(swing.L, swing.H);
+  }
+  if (st.plan) overlay.plan = st.plan.result;
+  UI.chart.setOverlay(overlay);
+}
+function generatePlan() {
+  const st = UI.chartState;
+  const settings = Settings.load();
+  const info = DataHub.stockInfo(st.ticker);
+  const funda = Funda.score(st.ticker, info);
+  const result = PlanEngine.generate(st.bars, { mode: st.mode, mkt: st.mkt, settings, info });
+  if (result.error) {
+    document.getElementById('planArea').innerHTML = `<div class="card"><div class="notice">⚠️ ${Fmt.esc(result.error)}</div></div>`;
+    st.plan = null;
+    drawAnalysisOverlay();
+    return;
+  }
+  if (st.mode === 'long' && funda.touched && funda.total < 50) {
+    result.warnings.push(`ファンダスコア${funda.total}点（50点未満）。中長期保有は見送り推奨。`);
+  }
+  st.plan = { ticker: st.ticker, name: st.bars.name, mode: st.mode, mkt: st.mkt, result, funda: funda.total, createdAt: Date.now() };
+  drawAnalysisOverlay();
+  renderPlanArea(st.plan);
+  document.getElementById('planArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function renderPlanArea(plan) {
+  const p = plan.result;
+  const mkt = plan.mkt;
+  const area = document.getElementById('planArea');
+  const vBadge = { good: '<span class="badge good">良好</span>', ok: '<span class="badge ok">可</span>', avoid: '<span class="badge bad">見送り推奨</span>' }[p.verdict.key];
+  const entriesRows = p.entries.map((e, i) => `
+    <tr><td>E${i + 1} ${e.atMarket ? '成行相当' : '指値'}</td>
+    <td><b>${Fmt.price(e.price, mkt)}</b></td>
+    <td>${e.qty ? Fmt.num(e.qty) + '株' : '−'}</td>
+    <td class="muted" style="font-size:11px;white-space:normal">${e.conf.map(Fmt.esc).join(' + ')}</td></tr>`).join('');
+  const targetRows = p.targets.map(t => `
+    <tr><td>${Fmt.esc(t.label)}</td>
+    <td><b>${t.trail ? '—' : Fmt.price(t.price, mkt)}</b></td>
+    <td>${Math.round(t.alloc * 100)}%</td>
+    <td class="muted" style="font-size:11px">${t.trail ? Fmt.esc(p.trailNote) : Fmt.pct(t.price / p.eavg - 1) + '（平均取得比）'}</td></tr>`).join('');
+  area.innerHTML = `
+    <div class="card">
+      <h2>トレードプラン ${vBadge} <span class="sub">${plan.mode === 'swing' ? 'スイング' : '中長期'}・想定保有 ${p.hold}・データ ${DataHub.dataDate() || ''}</span></h2>
+      ${p.warnings.map(w => `<div class="notice">⚠️ ${Fmt.esc(w)}</div>`).join('')}
+      <div class="kpi-row">
+        <div class="kpi"><div class="v" style="color:${p.rr >= 2.5 ? 'var(--green)' : p.rr >= 1.5 ? 'var(--fg)' : 'var(--danger)'}">${p.rr.toFixed(2)}</div><div class="k">リスクリワード比（手数料込 ${p.rrEff.toFixed(2)}）</div></div>
+        <div class="kpi"><div class="v">${Fmt.yen(p.riskActual || p.riskAmt)}</div><div class="k">想定リスク額（資金の${(100 * (p.riskActual || p.riskAmt) / Settings.load().capital).toFixed(2)}%）</div></div>
+        <div class="kpi"><div class="v">${Fmt.yen(p.capitalNeeded)}</div><div class="k">必要資金（全スライス約定時）</div></div>
+        <div class="kpi"><div class="v">${p.totalQty ? Fmt.num(p.totalQty) + '株' : '—'}</div><div class="k">合計数量${mkt === 'US' ? '（$1=' + Fmt.num(p.usdjpy, 1) + '円で換算）' : ''}</div></div>
+      </div>
+      ${p.sizeNote ? `<div class="notice">💰 ${Fmt.esc(p.sizeNote)}</div>` : ''}
+      <div class="plan-grid">
+        <div>
+          <h2>エントリー（分割指値）</h2>
+          <table class="tbl order-ticket">${entriesRows}</table>
+          <p class="muted" style="font-size:11px;margin-top:6px">平均取得単価（全約定時）: <b>${Fmt.price(p.eavg, mkt)}</b>／押し目ゾーン: ${Fmt.price(p.zone.bottom, mkt)} 〜 ${Fmt.price(p.zone.top, mkt)}</p>
+          <h2 style="margin-top:12px">損切り（逆指値・全量）</h2>
+          <table class="tbl order-ticket">
+            <tr><td>逆指値</td><td><b style="color:var(--warn)">${Fmt.price(p.sl, mkt)}</b></td>
+            <td class="muted" style="font-size:11px;white-space:normal">${Fmt.esc(p.slBasis)}${p.slAlt ? '。代替案: ' + Fmt.price(p.slAlt, mkt) : ''}（平均取得比 ${Fmt.pct(p.sl / p.eavg - 1)}）</td></tr>
+          </table>
+        </div>
+        <div>
+          <h2>利確（分割）</h2>
+          <table class="tbl order-ticket">${targetRows}</table>
+          <p class="muted" style="font-size:11px;margin-top:6px">${Fmt.esc(p.trailNote)}</p>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="savePlanBtn">💾 プランを保存</button>
+        <button class="btn" id="copyPlanBtn">📄 注文票をコピー</button>
+      </div>
+      <p class="muted" style="font-size:10.5px;margin-top:8px">※計算例であり売買の推奨ではありません。呼値の単位・単元・手数料は証券会社の実際の条件をご確認ください。</p>
+    </div>`;
+  document.getElementById('savePlanBtn').addEventListener('click', () => savePlan(plan));
+  document.getElementById('copyPlanBtn').addEventListener('click', () => copyOrderTicket(plan));
+}
+function orderTicketText(plan) {
+  const p = plan.result, mkt = plan.mkt;
+  const L = [];
+  L.push(`【${plan.ticker.replace('.T', '')} ${plan.name} ${plan.mode === 'swing' ? 'スイング' : '中長期'}買いプラン】`);
+  L.push(`作成: ${new Date(plan.createdAt).toLocaleDateString('ja-JP')} / データ: ${DataHub.dataDate() || '-'} / 判定: ${p.verdict.label} (RR ${p.rr.toFixed(2)})`);
+  L.push('■ エントリー');
+  p.entries.forEach((e, i) => L.push(`  E${i + 1}: ${e.atMarket ? '成行' : '指値'} ${Fmt.price(e.price, mkt)} × ${e.qty ? Fmt.num(e.qty) + '株' : '−'}（${e.conf.join('+')}）`));
+  L.push(`■ 損切り: 逆指値 ${Fmt.price(p.sl, mkt)}（全量）`);
+  L.push('■ 利確');
+  p.targets.forEach(t => L.push(`  ${t.label}: ${t.trail ? 'トレーリング' : Fmt.price(t.price, mkt)} で ${Math.round(t.alloc * 100)}%`));
+  L.push(`■ 想定リスク: ${Fmt.yen(p.riskActual || p.riskAmt)} / 必要資金: ${Fmt.yen(p.capitalNeeded)}`);
+  return L.join('\n');
+}
+async function copyOrderTicket(plan) {
+  const text = orderTicketText(plan);
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('注文票をコピーしました');
+  } catch (e) {
+    Modal.show(`<h3>注文票（手動でコピーしてください）</h3><textarea style="width:100%;height:220px">${Fmt.esc(text)}</textarea>
+      <div class="row" style="margin-top:10px"><button class="btn" onclick="Modal.hide()">閉じる</button></div>`);
+  }
+}
+function savePlan(plan) {
+  const plans = Journal.plans();
+  const p = plan.result;
+  plans.unshift({
+    id: 'p' + Date.now(),
+    ticker: plan.ticker, name: plan.name, mode: plan.mode, mkt: plan.mkt,
+    createdAt: plan.createdAt, status: 'draft',
+    snapshot: {
+      entries: p.entries.map(e => ({ price: e.price, qty: e.qty, conf: e.conf })),
+      sl: p.sl, targets: p.targets.map(t => ({ label: t.label, price: t.price, alloc: t.alloc, trail: !!t.trail })),
+      eavg: p.eavg, rr: p.rr, verdict: p.verdict.label, atr: p.atr,
+      riskAmt: p.riskActual || p.riskAmt, usdjpy: p.usdjpy, funda: plan.funda,
+      dataDate: DataHub.dataDate()
+    },
+    fills: [], exits: [], result: null, memo: ''
+  });
+  Journal.savePlans(plans);
+  alert('プランを保存しました（「プラン」タブで約定記録・管理できます）');
+}
+
+/* ---- ファンダ評価モーダル ---- */
+function showFundaModal(ticker, info) {
+  const f = Funda.score(ticker, info);
+  const man = Funda.manual(ticker);
+  const autoRows = f.autoDetail.map(d => `<tr><td>${Fmt.esc(d.label)}</td><td>${Fmt.esc(d.note)}</td><td>+${d.p}</td></tr>`).join('');
+  const checks = FUNDA_CHECKS.map(c => `
+    <label class="chk"><input type="checkbox" data-id="${c.id}" ${man.checks[c.id] ? 'checked' : ''}>
+    <span>${Fmt.esc(c.label)}</span><span class="pt">${c.pts > 0 ? '+' : ''}${c.pts}点</span></label>`).join('');
+  Modal.show(`
+    <h3>📋 ファンダメンタル評価 — ${Fmt.esc(info ? info.name : ticker)}</h3>
+    <p class="muted" style="font-size:12px">自動評価（最大40点）＋決算チェック（手動、最大60点）。決算短信・会社発表を見ながらチェックしてください。</p>
+    <h2 style="font-size:13px;margin:10px 0 4px">自動評価: ${f.auto}点</h2>
+    <div class="tbl-wrap"><table class="tbl">${autoRows}</table></div>
+    <h2 style="font-size:13px;margin:14px 0 4px">決算チェックリスト</h2>
+    ${checks}
+    <label class="fld" style="margin-top:10px">メモ（材料・懸念点など）
+      <textarea id="fundaMemo" rows="2">${Fmt.esc(man.memo || '')}</textarea></label>
+    <div class="row" style="margin-top:12px;justify-content:space-between">
+      <span id="fundaTotal" style="font-weight:800;font-size:16px">合計 ${f.total}点（${Funda.label(f.total)}）</span>
+      <div class="row">
+        <button class="btn" onclick="Modal.hide()">閉じる</button>
+        <button class="btn primary" id="fundaSave">保存</button>
+      </div>
+    </div>`);
+  const recalc = () => {
+    const checksNow = {};
+    document.querySelectorAll('#modalBody .chk input').forEach(i => { checksNow[i.dataset.id] = i.checked; });
+    let manPts = 0;
+    for (const c of FUNDA_CHECKS) if (checksNow[c.id]) manPts += c.pts;
+    const total = clamp(f.auto + manPts, 0, 100);
+    document.getElementById('fundaTotal').textContent = `合計 ${total}点（${Funda.label(total)}）`;
+    return checksNow;
+  };
+  document.querySelectorAll('#modalBody .chk input').forEach(i => i.addEventListener('change', recalc));
+  document.getElementById('fundaSave').addEventListener('click', () => {
+    const checksNow = recalc();
+    Funda.saveManual(ticker, { checks: checksNow, memo: document.getElementById('fundaMemo').value });
+    Modal.hide();
+    loadChartArea(ticker);
+  });
+}
+
+/* ---- 取り込みモーダル ---- */
+function showImportModal() {
+  Modal.show(`
+    <h3>📥 データ取り込み（CSV / コピペ）</h3>
+    <p class="muted" style="font-size:12px">
+      対応形式:<br>① stooq.com のCSV（Date,Open,High,Low,Close,Volume）… 例: <b>stooq.com</b>で「7203.jp」を検索→「データをダウンロード」<br>
+      ② Yahoo!ファイナンスの時系列表をコピー＆貼り付け（日付・始値・高値・安値・終値・出来高）
+    </p>
+    <div class="row" style="margin:10px 0">
+      <label class="fld">銘柄コード<input type="text" id="impCode" placeholder="7203 / AAPL" style="width:110px"></label>
+      <label class="fld">銘柄名<input type="text" id="impName" placeholder="トヨタ自動車" style="width:160px"></label>
+      <label class="fld">市場<select id="impMkt"><option value="JP">日本</option><option value="US">米国</option></select></label>
+    </div>
+    <input type="file" id="impFile" accept=".csv,.txt" style="margin-bottom:8px">
+    <textarea id="impText" rows="7" style="width:100%" placeholder="ここにCSVの中身 or コピーした時系列を貼り付け"></textarea>
+    <div id="impPreview" class="muted" style="font-size:12px;margin-top:6px"></div>
+    <div class="row" style="margin-top:10px;justify-content:flex-end">
+      <button class="btn" onclick="Modal.hide()">キャンセル</button>
+      <button class="btn primary" id="impSave">取り込む</button>
+    </div>`);
+  document.getElementById('impFile').addEventListener('change', ev => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { document.getElementById('impText').value = reader.result; preview(); };
+    reader.readAsText(file);
+    const m = file.name.match(/^(\w+)/);
+    if (m && !document.getElementById('impCode').value) document.getElementById('impCode').value = m[1].replace(/\.jp$/i, '');
+  });
+  const preview = () => {
+    const r = Importer.parse(document.getElementById('impText').value);
+    document.getElementById('impPreview').textContent = r.error ? '⚠️ ' + r.error :
+      `✅ ${r.bars.d.length}日分を認識（${Fmt.dateInt(r.bars.d[0])} 〜 ${Fmt.dateInt(r.bars.d[r.bars.d.length - 1])}）`;
+    return r;
+  };
+  document.getElementById('impText').addEventListener('input', preview);
+  document.getElementById('impSave').addEventListener('click', () => {
+    const r = preview();
+    if (r.error) { alert(r.error); return; }
+    let code = document.getElementById('impCode').value.trim();
+    const name = document.getElementById('impName').value.trim() || code;
+    const mkt = document.getElementById('impMkt').value;
+    if (!code) { alert('銘柄コードを入力してください'); return; }
+    if (mkt === 'JP' && /^\d{4}[A-Z]?$/.test(code)) code += '.T';
+    DataHub.putImported(code, name, mkt, r.bars);
+    Modal.hide();
+    openChart(code);
+  });
+}
+
+/* ================= プラン管理ビュー ================= */
+function renderPlans() {
+  const el = document.getElementById('view-plans');
+  const plans = Journal.plans();
+  const statusBadge = s => ({ draft: '<span class="badge ok">計画中</span>', active: '<span class="badge flow">保有中</span>', closed: '<span class="badge">終了</span>' }[s] || s);
+  const rows = plans.map(p => `
+    <tr class="stock-row" data-id="${p.id}">
+      <td><b>${p.ticker.replace('.T', '')}</b> ${Fmt.esc(p.name)}<br>
+        <span class="muted" style="font-size:10.5px">${p.mode === 'swing' ? 'スイング' : '中長期'}・${new Date(p.createdAt).toLocaleDateString('ja-JP')}</span></td>
+      <td>${statusBadge(p.status)}</td>
+      <td>${Fmt.price(p.snapshot.eavg, p.mkt)}</td>
+      <td style="color:var(--warn)">${Fmt.price(p.snapshot.sl, p.mkt)}</td>
+      <td>${p.snapshot.rr.toFixed(2)}</td>
+      <td>${p.status === 'closed' && p.result ? `<b class="${p.result.r > 0 ? 'pos' : 'neg'}">${p.result.r > 0 ? '+' : ''}${p.result.r.toFixed(2)}R</b>` : '−'}</td>
+    </tr>`).join('');
+  el.innerHTML = `
+    <div class="card">
+      <h2>トレードプラン <span class="sub">保存したプランの約定記録・決済管理</span></h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>銘柄</th><th>状態</th><th>平均取得予定</th><th>逆指値</th><th>RR</th><th>結果</th></tr>
+        ${rows || '<tr><td colspan="6" class="empty">保存されたプランはありません。チャート分析タブでプランを生成→保存してください。</td></tr>'}
+      </table></div>
+    </div>`;
+  el.querySelectorAll('.stock-row').forEach(tr => tr.addEventListener('click', () => showPlanModal(tr.dataset.id)));
+}
+function showPlanModal(id) {
+  const plans = Journal.plans();
+  const p = plans.find(x => x.id === id);
+  if (!p) return;
+  const s = p.snapshot;
+  const fillRows = (p.fills || []).map((f, i) => `<tr><td>${Fmt.esc(f.date)}</td><td>${Fmt.price(f.price, p.mkt)}</td><td>${Fmt.num(f.qty)}株</td><td><button class="btn small danger" data-del-fill="${i}">削除</button></td></tr>`).join('');
+  const exitRows = (p.exits || []).map((f, i) => `<tr><td>${Fmt.esc(f.date)}</td><td>${Fmt.price(f.price, p.mkt)}</td><td>${Fmt.num(f.qty)}株</td><td><button class="btn small danger" data-del-exit="${i}">削除</button></td></tr>`).join('');
+  const totalFillQty = (p.fills || []).reduce((a, f) => a + f.qty, 0);
+  const totalExitQty = (p.exits || []).reduce((a, f) => a + f.qty, 0);
+  Modal.show(`
+    <h3>${p.ticker.replace('.T', '')} ${Fmt.esc(p.name)} — ${p.mode === 'swing' ? 'スイング' : '中長期'}</h3>
+    <p class="muted" style="font-size:12px">計画: ${s.entries.map((e, i) => `E${i + 1} ${Fmt.price(e.price, p.mkt)}×${e.qty || '−'}`).join(' / ')}<br>
+    損切り ${Fmt.price(s.sl, p.mkt)} / ${s.targets.map(t => `${t.label} ${t.trail ? 'トレール' : Fmt.price(t.price, p.mkt)}`).join(' / ')} / RR ${s.rr.toFixed(2)}（${s.verdict}）</p>
+    <h2 style="font-size:13px;margin:10px 0 4px">約定（買い）記録 ${totalFillQty ? `— 合計${Fmt.num(totalFillQty)}株` : ''}</h2>
+    <table class="tbl">${fillRows}</table>
+    <div class="row" style="margin:6px 0">
+      <input type="date" id="fillDate" value="${new Date().toISOString().slice(0, 10)}">
+      <input type="number" id="fillPrice" placeholder="価格" style="width:100px">
+      <input type="number" id="fillQty" placeholder="株数" style="width:90px">
+      <button class="btn small" id="addFill">＋約定追加</button>
+    </div>
+    <h2 style="font-size:13px;margin:12px 0 4px">決済（売り）記録 ${totalExitQty ? `— 合計${Fmt.num(totalExitQty)}株` : ''}</h2>
+    <table class="tbl">${exitRows}</table>
+    <div class="row" style="margin:6px 0">
+      <input type="date" id="exitDate" value="${new Date().toISOString().slice(0, 10)}">
+      <input type="number" id="exitPrice" placeholder="価格" style="width:100px">
+      <input type="number" id="exitQty" placeholder="株数" style="width:90px">
+      <button class="btn small" id="addExit">＋決済追加</button>
+    </div>
+    <label class="chk" style="border:none"><input type="checkbox" id="followedChk" ${p.result && p.result.followed ? 'checked' : ''}><span>計画どおりに実行できた（IN/OUTとも）</span></label>
+    <label class="fld">振り返りメモ<textarea id="planMemo" rows="2">${Fmt.esc(p.memo || '')}</textarea></label>
+    <div class="row" style="margin-top:12px;justify-content:space-between">
+      <button class="btn danger" id="delPlan">プラン削除</button>
+      <div class="row">
+        <button class="btn" onclick="Modal.hide()">閉じる</button>
+        ${totalExitQty > 0 && totalExitQty >= totalFillQty && totalFillQty > 0 ? '<button class="btn primary" id="closePlan">クローズ確定</button>' : '<button class="btn primary" id="savePlanEdit">保存</button>'}
+      </div>
+    </div>`);
+  const save = () => { Journal.savePlans(plans); showPlanModal(id); renderPlans(); };
+  document.getElementById('addFill').addEventListener('click', () => {
+    const price = parseFloat(document.getElementById('fillPrice').value);
+    const qty = parseInt(document.getElementById('fillQty').value);
+    if (!price || !qty) { alert('価格と株数を入力してください'); return; }
+    p.fills = p.fills || [];
+    p.fills.push({ date: document.getElementById('fillDate').value, price, qty });
+    p.status = 'active';
+    save();
+  });
+  document.getElementById('addExit').addEventListener('click', () => {
+    const price = parseFloat(document.getElementById('exitPrice').value);
+    const qty = parseInt(document.getElementById('exitQty').value);
+    if (!price || !qty) { alert('価格と株数を入力してください'); return; }
+    p.exits = p.exits || [];
+    p.exits.push({ date: document.getElementById('exitDate').value, price, qty });
+    save();
+  });
+  document.querySelectorAll('[data-del-fill]').forEach(b => b.addEventListener('click', () => { p.fills.splice(+b.dataset.delFill, 1); if (!p.fills.length) p.status = 'draft'; save(); }));
+  document.querySelectorAll('[data-del-exit]').forEach(b => b.addEventListener('click', () => { p.exits.splice(+b.dataset.delExit, 1); save(); }));
+  document.getElementById('delPlan').addEventListener('click', () => {
+    if (!confirm('このプランを削除しますか？')) return;
+    plans.splice(plans.indexOf(p), 1);
+    Journal.savePlans(plans);
+    Modal.hide(); renderPlans();
+  });
+  const saveEdit = document.getElementById('savePlanEdit');
+  if (saveEdit) saveEdit.addEventListener('click', () => {
+    p.memo = document.getElementById('planMemo').value;
+    Journal.savePlans(plans);
+    Modal.hide(); renderPlans();
+  });
+  const closeBtn = document.getElementById('closePlan');
+  if (closeBtn) closeBtn.addEventListener('click', () => {
+    const fx = p.mkt === 'US' ? (p.snapshot.usdjpy || DataHub.usdjpy()) : 1;
+    const avgFill = p.fills.reduce((a, f) => a + f.price * f.qty, 0) / totalFillQty;
+    const pnl = p.exits.reduce((a, f) => a + (f.price - avgFill) * f.qty, 0) * fx;
+    const risk0 = (avgFill - p.snapshot.sl) * totalFillQty * fx;
+    const r = risk0 > 0 ? pnl / risk0 : 0;
+    p.result = { r, pnl, followed: document.getElementById('followedChk').checked, closedAt: Date.now() };
+    p.memo = document.getElementById('planMemo').value;
+    p.status = 'closed';
+    Journal.savePlans(plans);
+    Modal.hide(); renderPlans();
+  });
+}
+
+/* ================= ジャーナルビュー ================= */
+function renderJournal() {
+  const el = document.getElementById('view-journal');
+  const stats = Journal.stats();
+  const closed = Journal.plans().filter(p => p.status === 'closed' && p.result);
+  const rows = closed.map(p => `
+    <tr><td><b>${p.ticker.replace('.T', '')}</b> ${Fmt.esc(p.name)}</td>
+    <td>${p.mode === 'swing' ? 'S' : 'L'}</td>
+    <td>${new Date(p.result.closedAt).toLocaleDateString('ja-JP')}</td>
+    <td class="${p.result.r > 0 ? 'pos' : 'neg'}"><b>${p.result.r > 0 ? '+' : ''}${p.result.r.toFixed(2)}R</b></td>
+    <td class="${p.result.pnl > 0 ? 'pos' : 'neg'}">${Fmt.yen(p.result.pnl)}</td>
+    <td>${p.result.followed ? '✅' : '❌'}</td>
+    <td class="muted" style="font-size:11px;white-space:normal">${Fmt.esc(p.memo || '')}</td></tr>`).join('');
+  el.innerHTML = `
+    <div class="card">
+      <h2>トレードジャーナル <span class="sub">クローズ済みトレードの統計（R = 当初リスク額を1とした損益倍率）</span></h2>
+      ${stats ? `<div class="kpi-row">
+        <div class="kpi"><div class="v">${(stats.winRate * 100).toFixed(0)}%</div><div class="k">勝率（${stats.n}トレード）</div></div>
+        <div class="kpi"><div class="v ${stats.expectancy > 0 ? 'pos' : 'neg'}">${stats.expectancy >= 0 ? '+' : ''}${stats.expectancy.toFixed(2)}R</div><div class="k">期待値/トレード</div></div>
+        <div class="kpi"><div class="v">${isFinite(stats.pf) ? stats.pf.toFixed(2) : '∞'}</div><div class="k">プロフィットファクター</div></div>
+        <div class="kpi"><div class="v">${stats.cumR >= 0 ? '+' : ''}${stats.cumR.toFixed(1)}R</div><div class="k">累積R（最大DD ${stats.maxDD.toFixed(1)}R）</div></div>
+        <div class="kpi"><div class="v">${(stats.followRate * 100).toFixed(0)}%</div><div class="k">計画遵守率</div></div>
+      </div>` : '<div class="empty">クローズ済みのトレードがまだありません。<br>プランを保存→約定記録→決済記録→クローズ確定で統計が貯まります。</div>'}
+      <div class="tbl-wrap"><table class="tbl">
+        ${closed.length ? '<tr><th>銘柄</th><th>型</th><th>決済日</th><th>R</th><th>損益</th><th>遵守</th><th>メモ</th></tr>' : ''}
+        ${rows}
+      </table></div>
+      ${stats && stats.n >= 30 ? '<p class="muted" style="font-size:11px">✅ 30トレード以上の実績があるため、プランの参考期待値には実測勝率が使えます。</p>' : ''}
+    </div>`;
+}
+
+/* ================= 設定ビュー ================= */
+function renderSettings() {
+  const el = document.getElementById('view-settings');
+  const s = Settings.load();
+  const meta = DataHub.meta || Store.get('cache.meta', null);
+  let lsBytes = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k.startsWith(LS_PREFIX)) lsBytes += (localStorage.getItem(k) || '').length * 2;
+  }
+  el.innerHTML = `
+    <div class="card">
+      <h2>資金・リスク設定</h2>
+      <div class="row">
+        <label class="fld">総資金（円）<input type="number" id="setCapital" value="${s.capital}" step="100000" style="width:150px"></label>
+        <label class="fld">1トレードのリスク（%）<input type="number" id="setRisk" value="${s.riskPct}" step="0.1" min="0.1" max="5" style="width:110px"></label>
+        <label class="fld">往復手数料率（%）<input type="number" id="setFee" value="${s.feePct}" step="0.05" min="0" style="width:110px"></label>
+        <label class="fld">既定モード<select id="setMode">
+          <option value="swing" ${s.defaultMode === 'swing' ? 'selected' : ''}>スイング</option>
+          <option value="long" ${s.defaultMode === 'long' ? 'selected' : ''}>中長期</option></select></label>
+      </div>
+      <p class="muted" style="font-size:11.5px;margin-top:6px">リスク%は「1回のトレードで損切りにかかった場合に失う資金の割合」。1%なら${Fmt.yen(s.capital * 0.01)}。プロの標準は0.5〜2%です。</p>
+      <button class="btn primary" id="saveSettings" style="margin-top:8px">設定を保存</button>
+    </div>
+    <div class="card">
+      <h2>データ状態</h2>
+      <table class="tbl">
+        <tr><td>相場データ</td><td>${meta ? meta.generatedAt + '（' + (meta.stockCount || '?') + '銘柄）' : 'なし'}</td></tr>
+        <tr><td>取得モード</td><td>${DataHub.online ? 'オンライン（自動更新）' : 'オフライン（キャッシュ/取り込み）'}</td></tr>
+        <tr><td>ドル円レート</td><td>${Fmt.num(DataHub.usdjpy(), 2)}円</td></tr>
+        <tr><td>アプリ使用容量</td><td>${(lsBytes / 1024).toFixed(0)} KB</td></tr>
+        <tr><td>バージョン</td><td>${APP_VERSION}</td></tr>
+      </table>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="reloadData">🔄 データ再読込</button>
+        <button class="btn" id="clearCache">🧹 相場キャッシュ削除</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>バックアップ</h2>
+      <p class="muted" style="font-size:12px">プラン・ジャーナル・ファンダ評価・設定をJSONファイルに保存/復元します（相場データは含まず）。月1回程度のバックアップを推奨。</p>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="backupBtn">💾 バックアップを保存</button>
+        <button class="btn" id="restoreBtn">📂 バックアップから復元</button>
+        <input type="file" id="restoreFile" accept=".json" style="display:none">
+      </div>
+    </div>
+    <div class="card">
+      <h2>免責事項</h2>
+      <p class="muted" style="font-size:12px">本アプリは株式投資の分析・計算を補助するツールであり、投資助言や特定銘柄の売買推奨を行うものではありません。表示される価格・数量・戦略はすべて過去データに基づく計算例です。相場データには取得遅延・欠損が含まれる場合があります。投資の最終判断と結果責任はご利用者ご自身に帰属します。</p>
+    </div>`;
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    const ns = {
+      capital: Math.max(10000, parseFloat(document.getElementById('setCapital').value) || DEFAULT_SETTINGS.capital),
+      riskPct: clamp(parseFloat(document.getElementById('setRisk').value) || 1, 0.1, 5),
+      feePct: Math.max(0, parseFloat(document.getElementById('setFee').value) || 0),
+      defaultMode: document.getElementById('setMode').value
+    };
+    Settings.save(ns);
+    alert('設定を保存しました');
+    renderSettings();
+  });
+  document.getElementById('reloadData').addEventListener('click', async () => {
+    await DataHub.init();
+    SectorFlow.invalidate();
+    updateDataBadge();
+    alert(DataHub.online ? 'データを再読込しました（' + DataHub.dataDate() + '）' : 'オンラインデータに接続できませんでした');
+    renderSettings();
+  });
+  document.getElementById('clearCache').addEventListener('click', () => {
+    if (!confirm('相場データのキャッシュを削除しますか？（プラン・設定は消えません）')) return;
+    for (const k of Store.keys()) if (k.startsWith('cache.')) Store.remove(k);
+    alert('キャッシュを削除しました');
+    renderSettings();
+  });
+  document.getElementById('backupBtn').addEventListener('click', () => {
+    const obj = Store.backupObject();
+    const blob = new Blob([JSON.stringify(obj, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'トレードプランナー_バックアップ_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('restoreBtn').addEventListener('click', () => document.getElementById('restoreFile').click());
+  document.getElementById('restoreFile').addEventListener('change', ev => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const obj = JSON.parse(reader.result);
+        if (!confirm(`${obj.exportedAt ? obj.exportedAt.slice(0, 10) + ' 時点の' : ''}バックアップで現在のデータを置き換えます。よろしいですか？`)) return;
+        Store.restoreObject(obj);
+        alert('復元しました');
+        location.reload();
+      } catch (e) { alert('復元に失敗: ' + e.message); }
+    };
+    reader.readAsText(file);
+  });
+}
+/* ---------------- 初回同意 ---------------- */
+function showConsent() {
+  Modal.show(`
+    <h3>ご利用の前に</h3>
+    <p style="font-size:13px;line-height:1.8">
+      本アプリは株式投資の<b>分析・計算を補助するツール</b>であり、投資助言・特定銘柄の売買推奨を行うものではありません。<br>
+      ・表示される価格、数量、エントリー/損切り/利確水準はすべて<b>過去データに基づく計算例</b>です。<br>
+      ・相場データには取得遅延・欠損が含まれる場合があります。発注前に必ず証券会社の実際の気配・呼値・手数料をご確認ください。<br>
+      ・投資の最終判断と結果責任はご利用者ご自身に帰属します。
+    </p>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button class="btn primary" id="consentBtn">理解して利用を開始する</button>
+    </div>`, { locked: true });
+  document.getElementById('consentBtn').addEventListener('click', () => {
+    const meta = Store.get('meta', {});
+    meta.consentAt = Date.now();
+    Store.set('meta', meta);
+    Modal.hide();
+  });
+}
+
+/* ---------------- セルフテスト（?selftest=1） ---------------- */
+function runSelftest() {
+  const results = [];
+  const T = (name, fn) => {
+    try {
+      const r = fn();
+      if (r === true || r === undefined) results.push({ name, ok: true });
+      else results.push({ name, ok: false, msg: String(r) });
+    } catch (e) { results.push({ name, ok: false, msg: e.message }); }
+  };
+  const approx = (a, b, tol = 1e-6) => Math.abs(a - b) <= tol || `expected ${b}, got ${a}`;
+
+  // --- 指標 ---
+  T('SMA基本', () => {
+    const r = Ind.sma([1, 2, 3, 4, 5], 3);
+    return r[0] === null && r[1] === null && approx(r[2], 2) === true && approx(r[4], 4) === true || JSON.stringify(r);
+  });
+  T('RSI: 単調上昇で100', () => {
+    const c = Array.from({ length: 40 }, (_, i) => 100 + i);
+    const r = Ind.rsi(c, 14);
+    return approx(r[39], 100, 0.01) === true || 'rsi=' + r[39];
+  });
+  T('RSI: 値域0-100・先頭null', () => {
+    const c = Array.from({ length: 60 }, (_, i) => 100 + Math.sin(i / 3) * 10);
+    const r = Ind.rsi(c, 14);
+    if (r[13] !== null) return '13番目はnullのはず';
+    return r.slice(14).every(v => v >= 0 && v <= 100) || '値域外あり';
+  });
+  T('ATR: 一定レンジ', () => {
+    const n = 50, bars = { o: [], h: [], l: [], c: [], v: [] };
+    for (let i = 0; i < n; i++) { bars.o.push(100); bars.h.push(102); bars.l.push(98); bars.c.push(100); bars.v.push(1000); }
+    const atr = Ind.atr(bars, 14);
+    return approx(atr[n - 1], 4, 0.01) === true || 'atr=' + atr[n - 1];
+  });
+  T('MACD: 長さと初期null', () => {
+    const c = Array.from({ length: 100 }, (_, i) => 100 + i * 0.5);
+    const m = Ind.macd(c);
+    return m.line.length === 100 && m.line[10] === null && m.line[99] !== null && m.hist[99] !== null || 'MACD構造異常';
+  });
+  // --- 呼値 ---
+  T('呼値: 3000円以下は1円', () => Tick.sizeJP(2999) === 1 || String(Tick.sizeJP(2999)));
+  T('呼値: 3002円→5円単位切下げ3000円', () => Tick.floor(3002, 'JP') === 3000 || String(Tick.floor(3002, 'JP')));
+  T('呼値: 米国は1セント', () => approx(Tick.floor(12.3456, 'US'), 12.34) === true || String(Tick.floor(12.3456, 'US')));
+  T('呼値: 12000円→10円単位', () => Tick.floor(12007, 'JP') === 12000 || String(Tick.floor(12007, 'JP')));
+  // --- 合成データ生成 ---
+  const mkBars = pricePath => {
+    const b = { d: [], o: [], h: [], l: [], c: [], v: [] };
+    let day = 0;
+    for (const p of pricePath) {
+      b.d.push(20250101 + day++);
+      b.o.push(p * 0.998); b.h.push(p * 1.01); b.l.push(p * 0.99); b.c.push(p); b.v.push(100000);
+    }
+    return b;
+  };
+  const wave = [];
+  for (let i = 0; i < 30; i++) wave.push(100 + i);            // 100→129 上昇
+  for (let i = 0; i < 12; i++) wave.push(129 - i * 1.2);      // →114.6 押し
+  for (let i = 0; i < 25; i++) wave.push(114.6 + i * 1.4);    // →148.2 上昇
+  for (let i = 0; i < 8; i++) wave.push(148.2 - i * 1.1);     // →140.5 押し目形成中
+  const waveBars = mkBars(wave);
+  T('ZigZag: 交互のH/Lピボット', () => {
+    const pv = ZigZag.detect(waveBars, 'swing');
+    if (pv.length < 3) return 'ピボット不足: ' + pv.length;
+    for (let i = 1; i < pv.length; i++) if (pv[i].type === pv[i - 1].type) return '同型連続';
+    return true;
+  });
+  T('ZigZag: 末尾は仮ピボット', () => {
+    const pv = ZigZag.detect(waveBars, 'swing');
+    return pv[pv.length - 1].provisional === true || '末尾がprovisionalでない';
+  });
+  T('フィボ: スイング選択と押し率', () => {
+    const pv = ZigZag.detect(waveBars, 'swing');
+    const sw = Fibo.pickSwing(waveBars, pv, 'swing');
+    if (!sw) return 'スイング未検出';
+    if (sw.outOfRange) return '押し目レンジ外判定になった';
+    if (!(sw.H.price > sw.L.price)) return 'H<=L';
+    return sw.retr > 0.05 && sw.retr < 0.6 || 'retr=' + sw.retr;
+  });
+  T('フィボ: 水準の計算', () => {
+    const lv = Fibo.levels({ price: 100 }, { price: 200 });
+    return approx(lv.retr[0.5], 150) === true && approx(lv.retr[0.382], 161.8) === true
+      && approx(lv.ext[1.618], 261.8) === true || JSON.stringify(lv.retr);
+  });
+  // --- プランエンジン ---
+  const settings = { capital: 3000000, riskPct: 1, feePct: 0.1, defaultMode: 'swing' };
+  T('プラン: 基本生成（JP）', () => {
+    const p = PlanEngine.generate(waveBars, { mode: 'swing', mkt: 'JP', settings, info: null });
+    if (p.error) return p.error;
+    if (!(p.entries.length >= 1 && p.entries.length <= 3)) return 'entries数=' + p.entries.length;
+    for (let i = 1; i < p.entries.length; i++) if (p.entries[i].price >= p.entries[i - 1].price) return 'エントリーが降順でない';
+    if (!(p.sl < p.entries[p.entries.length - 1].price)) return 'SLが最深エントリー以上';
+    if (!(p.targets[0].price >= p.entries[0].price)) return 'T1がE1未満';
+    if (!(p.rr > 0)) return 'RR<=0';
+    return true;
+  });
+  T('プラン: 単元株100株丸め（JP）', () => {
+    const p = PlanEngine.generate(waveBars, { mode: 'swing', mkt: 'JP', settings, info: null });
+    if (p.error) return p.error;
+    return p.entries.every(e => e.qty % 100 === 0) || '100株単位でない';
+  });
+  T('プラン: 実リスク≦設定リスク', () => {
+    const p = PlanEngine.generate(waveBars, { mode: 'swing', mkt: 'JP', settings, info: null });
+    if (p.error) return p.error;
+    if (p.totalQty === 0) return true; // サイズ0なら対象外
+    return p.riskActual <= p.riskAmt * 1.02 || `risk ${p.riskActual} > ${p.riskAmt}`;
+  });
+  T('プラン: 米国株は1株単位＋円換算', () => {
+    const p = PlanEngine.generate(waveBars, { mode: 'long', mkt: 'US', settings, info: null });
+    if (p.error) return p.error;
+    if (!p.entries.every(e => Number.isInteger(e.qty))) return '整数株でない';
+    if (!p.targets.every(t => isFinite(t.price))) return 'ターゲットにNaN（T3計算不良）';
+    if (!isFinite(p.rr)) return 'RRがNaN';
+    return p.usdjpy > 0 || 'usdjpy未設定';
+  });
+  T('プラン: 資金不足時の代替案', () => {
+    const tiny = { ...settings, capital: 100000, riskPct: 0.5 };
+    const bigWave = mkBars(wave.map(p2 => p2 * 300)); // 値がさ株（4万円台）
+    const p = PlanEngine.generate(bigWave, { mode: 'swing', mkt: 'JP', settings: tiny, info: null });
+    if (p.error) return p.error;
+    return p.totalQty === 0 && !!p.sizeNote || 'sizeNote=' + p.sizeNote + ' qty=' + p.totalQty;
+  });
+  T('プラン: 単元に届かない時は1本指値へ自動縮小', () => {
+    const cap10 = { ...settings, capital: 10000000, riskPct: 1 };
+    const midWave = mkBars(wave.map(p2 => p2 * 60)); // 6,000〜8,900円級
+    const p = PlanEngine.generate(midWave, { mode: 'swing', mkt: 'JP', settings: cap10, info: null });
+    if (p.error) return p.error;
+    if (p.totalQty !== 100) return 'totalQty=' + p.totalQty;
+    return !!p.sizeNote && p.sizeNote.includes('縮小') || 'sizeNote=' + p.sizeNote;
+  });
+  T('プラン: データ不足エラー', () => {
+    const p = PlanEngine.generate(mkBars(wave.slice(0, 40)), { mode: 'swing', mkt: 'JP', settings, info: null });
+    return !!p.error || 'エラーになるべき';
+  });
+  T('プラン: 下降トレンドで無理にプランを出さない', () => {
+    const down = [];
+    for (let i = 0; i < 100; i++) down.push(200 - i);
+    const p = PlanEngine.generate(mkBars(down), { mode: 'swing', mkt: 'JP', settings, info: null });
+    // エラー or 見送り推奨・警告付きならOK（無警告の推奨プランはNG）
+    if (p.error) return true;
+    return p.verdict.key === 'avoid' || p.warnings.length > 0 || '下降トレンドで無警告プラン';
+  });
+  T('プラン: ストップ高連続（ギャップ）でも破綻しない', () => {
+    const gap = [];
+    for (let i = 0; i < 60; i++) gap.push(100);
+    for (let i = 0; i < 5; i++) gap.push(100 * Math.pow(1.15, i + 1));
+    for (let i = 0; i < 10; i++) gap.push(gap[gap.length - 1] * 0.99);
+    const p = PlanEngine.generate(mkBars(gap), { mode: 'swing', mkt: 'JP', settings, info: null });
+    return true; // 例外を投げなければOK（エラー返却は許容）
+  });
+  // --- 取り込み ---
+  T('取込: stooq CSV', () => {
+    let csv = 'Date,Open,High,Low,Close,Volume\n';
+    for (let i = 0; i < 40; i++) {
+      const d = new Date(2026, 0, 1 + i).toISOString().slice(0, 10);
+      csv += `${d},${100 + i},${101 + i},${99 + i},${100.5 + i},10000\n`;
+    }
+    const r = Importer.parse(csv);
+    if (r.error) return r.error;
+    return r.bars.d.length === 40 && r.bars.c[0] === 100.5 || 'rows=' + r.bars.d.length;
+  });
+  T('取込: 日本語日付コピペ＋逆順ソート', () => {
+    let txt = '';
+    for (let i = 39; i >= 0; i--) {
+      const mo = i < 28 ? 2 : 3, day = i < 28 ? i + 1 : i - 27;
+      txt += `2026年${mo}月${day}日\t${100 + i}\t${101 + i}\t${99 + i}\t${100.5 + i}\t5000\n`;
+    }
+    const r = Importer.parse(txt);
+    if (r.error) return r.error;
+    for (let i = 1; i < r.bars.d.length; i++) if (r.bars.d[i] <= r.bars.d[i - 1]) return '昇順でない';
+    return true;
+  });
+  T('取込: 行不足エラー', () => {
+    const r = Importer.parse('2026/1/1\t100\t101\t99\t100\t500');
+    return !!r.error || 'エラーになるべき';
+  });
+  T('取込: 空文字エラー', () => !!Importer.parse('').error || 'エラーになるべき');
+  // --- ユーティリティ ---
+  T('percentile: 空配列で0', () => percentile(5, []) === 0 || String(percentile(5, [])));
+  T('percentile: 最大値≈1', () => percentile(9, [1, 3, 5, 7, 9]) >= 0.99 || String(percentile(9, [1, 3, 5, 7, 9])));
+  T('バックアップ: 形式', () => {
+    const b = Store.backupObject();
+    return b.app === 'trade-planner' && b.schema === DATA_SCHEMA && typeof b.data === 'object' || JSON.stringify(Object.keys(b));
+  });
+  // --- ジャーナル統計（スタブ差し替え） ---
+  T('ジャーナル統計', () => {
+    const orig = Journal.plans;
+    Journal.plans = () => [
+      { status: 'closed', result: { r: 2, followed: true } },
+      { status: 'closed', result: { r: -1, followed: true } },
+      { status: 'closed', result: { r: 1, followed: false } },
+      { status: 'draft', result: null }
+    ];
+    const s = Journal.stats();
+    Journal.plans = orig;
+    if (!s) return '統計がnull';
+    return approx(s.winRate, 2 / 3, 0.01) === true && approx(s.cumR, 2, 0.01) === true
+      && approx(s.followRate, 2 / 3, 0.01) === true || JSON.stringify(s);
+  });
+  // --- セクターフロー（合成データ） ---
+  T('セクターフロー: 強弱の順位', () => {
+    const days = 320;
+    const mkSeries = (name, drift, kind) => {
+      const d = [], o = [], h = [], l = [], c = [], v = [];
+      let p = 100;
+      for (let i = 0; i < days; i++) {
+        d.push(20240101 + i);
+        p *= (1 + drift);
+        o.push(p); h.push(p * 1.005); l.push(p * 0.995); c.push(p); v.push(1000000);
+      }
+      return { name, mkt: 'JP', kind, d, o, h, l, c, v };
+    };
+    const origMarket = DataHub.market;
+    const origTier = Store.get('sectorTier.JP', null);
+    DataHub.market = { series: {
+      '1306.T': mkSeries('bench', 0.0005, 'bench'),
+      'STRONG': mkSeries('強いセクター', 0.002, 'sector'),
+      'FLAT': mkSeries('横ばい', 0.0005, 'sector'),
+      'WEAK': mkSeries('弱いセクター', -0.001, 'sector'),
+    } };
+    SectorFlow.invalidate();
+    const rows = SectorFlow.compute('JP');
+    DataHub.market = origMarket;
+    SectorFlow.invalidate();
+    if (origTier === null) Store.remove('sectorTier.JP'); else Store.set('sectorTier.JP', origTier);
+    if (rows.length !== 3) return 'セクター数=' + rows.length;
+    const order = rows.map(r => r.t);
+    return order[0] === 'STRONG' && order[2] === 'WEAK' || order.join(',');
+  });
+
+  // --- 結果表示 ---
+  const pass = results.filter(r => r.ok).length;
+  document.querySelector('main').innerHTML = `
+    <div class="card">
+      <h2>セルフテスト結果: ${pass}/${results.length} ${pass === results.length ? '✅ 全緑' : '❌ 失敗あり'}</h2>
+      <table class="tbl">
+        ${results.map(r => `<tr><td>${r.ok ? '✅' : '❌'} ${Fmt.esc(r.name)}</td><td style="white-space:normal;color:var(--danger)">${r.ok ? '' : Fmt.esc(r.msg || '')}</td></tr>`).join('')}
+      </table>
+    </div>`;
+  document.title = `selftest ${pass}/${results.length}`;
+  window.__selftest = { pass, total: results.length, results };
+}
+
+/* ---------------- 起動 ---------------- */
+async function boot() {
+  Store.migrate();
+  if (navigator.storage && navigator.storage.persist) {
+    try { navigator.storage.persist(); } catch (e) { /* noop */ }
+  }
+  const isTest = new URLSearchParams(location.search).get('selftest') === '1';
+  await DataHub.init();
+  updateDataBadge();
+  if (isTest) { runSelftest(); return; }
+  if (!Store.get('meta', {}).consentAt) showConsent();
+  UI.switchTo('sector');
+}
+boot();
+</script>
+</body>
+</html>

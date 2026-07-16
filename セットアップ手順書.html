@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>株式トレードプランナー セットアップ手順書</title>
+<style>
+:root{ --ink:#1e2a32; --accent:#0e7c86; --line:#dde4e9; --bg:#f4f6f8; --warn:#c0392b; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--ink); line-height:1.85;
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; }
+.wrap{ max-width:820px; margin:0 auto; padding:32px 24px 80px; background:#fff;
+  box-shadow:0 1px 12px rgba(20,40,60,.06); min-height:100vh; }
+h1{ font-size:26px; border-bottom:3px solid var(--accent); padding-bottom:10px; margin:0 0 20px; }
+h2{ font-size:20px; color:var(--accent); margin:34px 0 12px; padding-left:10px; border-left:5px solid var(--accent); }
+h3{ font-size:17px; margin:22px 0 8px; }
+p{ margin:10px 0; font-size:15.5px; }
+ul,ol{ margin:8px 0; padding-left:26px; }
+li{ margin:5px 0; font-size:15.5px; }
+code{ background:#eef2f4; padding:2px 6px; border-radius:5px; font-size:14px;
+  font-family:"SF Mono",Menlo,Consolas,monospace; word-break:break-all; }
+strong{ color:#0a5c64; }
+a{ color:var(--accent); }
+hr{ border:none; border-top:1px solid var(--line); margin:26px 0; }
+blockquote{ margin:12px 0; padding:10px 16px; background:#f0f7f8; border-left:4px solid var(--accent);
+  border-radius:0 8px 8px 0; font-size:15px; }
+table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:14.5px; }
+th,td{ border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top; }
+th{ background:#eaf4f5; }
+tr:nth-child(even) td{ background:#fafcfc; }
+.cb{ font-size:17px; }
+.printbar{ position:sticky; top:0; background:#fff; padding:8px 0 14px; margin:-8px 0 8px;
+  border-bottom:1px solid var(--line); }
+.printbar button{ background:var(--accent); color:#fff; border:none; border-radius:8px;
+  padding:9px 16px; font-size:14px; cursor:pointer; }
+.printbar span{ font-size:12px; color:#5b6b76; margin-left:10px; }
+@media print{ body{ background:#fff; } .wrap{ box-shadow:none; max-width:none; padding:0; } .printbar{ display:none; } }
+</style></head><body><div class="wrap">
+<div class="printbar"><button onclick="window.print()">🖨 印刷 / PDFで保存</button>
+<span>このページは⌘Pで紙にもPDFにもできます</span></div>
+<h1>株式トレードプランナー セットアップ手順書</h1>
+<p>このアプリは <strong>GitHub Pages</strong>（無料のホームページ置き場）に置くと、</p>
+<p><strong>毎朝6時半に株価データが自動更新される</strong>仕組みになっています。</p>
+<p>在庫発注アプリや打刻アプリと同じ方式なので、作業の流れはほぼ同じです。</p>
+<p>所要時間はおよそ20〜30分。一度設定すれば、あとは何もしなくて大丈夫です。</p>
+<blockquote>💡 GitHub Pagesに置かず、<code>index.html</code> をダブルクリックして開くだけでも使えます（オフラインモード）。<br>その場合は自動データ更新がないため、銘柄データは「CSV/コピペ取り込み」で入れます。</blockquote>
+<hr>
+<h2>全体の仕組み</h2>
+<p>```</p>
+<p>GitHub（毎朝6:30に自動実行）</p>
+<p>└─ yfinance で株価取得 → data/ フォルダを更新</p>
+<p>↓</p>
+<p>GitHub Pages（アプリの置き場所・固定URL）</p>
+<p>↓</p>
+<p>iPad / Mac のブラウザでアプリを開く → 最新データを自動読込</p>
+<p>```</p>
+<ul>
+<li>株価は<strong>前日終値ベース</strong>です（リアルタイムではありません）。夜〜朝にプランを立てて、翌日発注する使い方を想定しています。</li>
+<li>プラン・ジャーナル・設定は<strong>端末の中</strong>（ブラウザのlocalStorage）に保存されます。GitHubには送られません。</li>
+</ul>
+<hr>
+<h2>手順1: 新しいリポジトリを作る</h2>
+<ol>
+<li>Safariで https://github.com にアクセスし、いつものアカウントでログイン</li>
+<li>右上の「＋」→「New repository」をクリック</li>
+<li>次のように入力:</li>
+<ul>
+<li>Repository name: <code>trade-planner</code></li>
+<li>Public を選択（Privateだと無料プランでPagesが使えません）</li>
+<li>ほかはそのまま</li>
+</ul>
+<li>緑の「Create repository」をクリック</li>
+</ol>
+<h2>手順2: アプリのファイルをアップロードする</h2>
+<ol>
+<li>作ったリポジトリの画面で「uploading an existing file」（または「Add file」→「Upload files」）をクリック</li>
+<li>Macの Finder で <code>Desktop/Ai/株式トレードプランナー</code> フォルダを開き、次の<strong>ファイルとフォルダをドラッグ＆ドロップ</strong>:</li>
+<ul>
+<li><code>index.html</code></li>
+<li><code>README.md</code></li>
+<li><code>scripts</code> フォルダ（中に fetch_data.py と requirements.txt）</li>
+<li>※ <code>data</code> フォルダと <code>.venv</code> は<strong>アップロード不要</strong>（dataは手順4で自動生成されます）</li>
+</ul>
+<li>下の緑ボタン「Commit changes」をクリック</li>
+</ol>
+<h2>手順3: 自動更新の仕組み（ワークフロー）を登録する</h2>
+<p><code>.github</code> で始まる隠しフォルダはドラッグできないので、GitHubの画面上で作ります。</p>
+<ol>
+<li>リポジトリ上部の「Actions」タブをクリック</li>
+<li>「set up a workflow yourself」をクリック（見つからない場合は「Skip this and set up a workflow yourself」）</li>
+<li>ファイル名が <code>main.yml</code> になっているので <strong><code>daily.yml</code> に変更</strong></li>
+<li>大きな入力欄に、Macの <code>Desktop/Ai/株式トレードプランナー/.github/workflows/daily.yml</code> の中身を<strong>全部コピーして貼り付け</strong></li>
+<ul>
+<li>Finderで見えない場合: このフォルダの <code>daily.yml の中身.txt</code> にも同じ内容を入れてあります</li>
+</ul>
+<li>右上の「Commit changes...」→ もう一度「Commit changes」</li>
+</ol>
+<h2>手順4: 初回のデータ取得を実行する</h2>
+<ol>
+<li>「Actions」タブ →左側の「相場データ自動更新」をクリック</li>
+<li>右側の「Run workflow」→ 緑の「Run workflow」をクリック</li>
+<li>3〜5分待つと ✅ 緑のチェックがつき、リポジトリに <code>data</code> フォルダができています</li>
+<ul>
+<li>❌ 赤になったら、もう一度「Run workflow」（Yahoo側の一時的な混雑で失敗することがあります）</li>
+</ul>
+</ol>
+<p>これ以降、<strong>平日の朝6:30ごろに自動で同じ処理が走ります</strong>。何もしなくてOKです。</p>
+<blockquote>⚠️ GitHubの仕様で、リポジトリに60日間まったく更新がないと自動実行が止まりますが、<br>このワークフロー自体が毎日データを更新するので、実質止まりません。<br>もし長期間止めていた場合は「Run workflow」を1回手で押せば再開します。</blockquote>
+<h2>手順5: ホームページとして公開する（Pages）</h2>
+<ol>
+<li>リポジトリの「Settings」→ 左メニューの「Pages」</li>
+<li>「Source」を <strong>Deploy from a branch</strong>、Branchを <strong>main</strong> / <strong>(root)</strong> にして「Save」</li>
+<li>1〜2分後、上部に URL が表示されます:</li>
+</ol>
+<p><code>https://（アカウント名）.github.io/trade-planner/</code></p>
+<ol>
+<li>この URL を iPad の Safari で開き、共有ボタン →「ホーム画面に追加」</li>
+</ol>
+<blockquote>⚠️ <strong>URLは変えないでください。</strong> プランやジャーナルはこのURL単位で端末に保存されるため、<br>リポジトリ名の変更＝URLの変更をすると、保存済みデータが見えなくなります。<br>（ホーム画面のアイコンを削除→再追加するのは問題ありません）</blockquote>
+<hr>
+<h2>使い方（毎日の流れ）</h2>
+<ol>
+<li><strong>セクター</strong>タブ: 今どのセクターにお金が入っているかを確認（「資金流入中」バッジ）</li>
+<li>セクターカードをタップ → <strong>スクリーナー</strong>: そのセクター内の候補銘柄が高スコア順に並ぶ</li>
+<li>銘柄をタップ → <strong>チャート分析</strong>: フィボナッチと押し目ゾーンを確認</li>
+<li>「トレードプラン生成」ボタン → <strong>買い指値3本・逆指値・利確目標・株数</strong>が自動計算される</li>
+<ul>
+<li>判定が「見送り推奨」（赤）のときは無理をしない。それも大事な判断です</li>
+</ul>
+<li>「注文票をコピー」→ 証券会社アプリで注文 → 「プランを保存」</li>
+<li>約定したら<strong>プラン</strong>タブで約定記録、決済したら決済記録→クローズ確定</li>
+<li><strong>ジャーナル</strong>タブで勝率・期待値・計画遵守率を振り返る</li>
+</ol>
+<h3>最初にやっておくこと</h3>
+<ul>
+<li><strong>設定</strong>タブで「総資金」と「1トレードのリスク%」を入力（初期値: 300万円・1%）</li>
+<li>中長期投資をする銘柄は、チャート画面の「ファンダ評価」で決算チェックを入れるとスコアが正確になります</li>
+</ul>
+<h3>データについて</h3>
+<ul>
+<li>対象銘柄: 日経225構成銘柄＋米国S&amp;P100（約320銘柄）＋主要指数・セクターETF</li>
+<li>それ以外の銘柄は「CSV/コピペ取り込み」で個別に追加できます</li>
+<ul>
+<li>stooq.com で「7203.jp」のように検索 →「データをダウンロード」→ CSVを取り込み</li>
+<li>または Yahoo!ファイナンスの時系列表をコピーして貼り付け</li>
+</ul>
+<li>バックアップ: 設定タブ →「バックアップを保存」を月1回程度（プラン・記録が守られます）</li>
+</ul>
+<hr>
+<h2>困ったとき</h2>
+<table><thead><tr><th>症状</th><th>対処</th></tr></thead><tbody>
+<tr><td>「オフライン」と表示される</td><td>ネット接続を確認 → 設定タブ「データ再読込」</td></tr>
+<tr><td>データの日付が古い</td><td>GitHubのActionsタブで最新の実行が✅か確認。❌なら「Run workflow」</td></tr>
+<tr><td>銘柄が検索で出てこない</td><td>ユニバース外の銘柄です。「CSV/コピペ取り込み」で追加</td></tr>
+<tr><td>保存に失敗と出る</td><td>設定タブ「バックアップを保存」→「相場キャッシュ削除」</td></tr>
+<tr><td>プランが「見送り推奨」ばかり</td><td>相場全体が弱い時期です。セクタースコア70以上が増えるまで待つのも戦略</td></tr>
+</tbody></table>
+<h2>大事な注意（必ずお読みください）</h2>
+<ul>
+<li>本アプリは<strong>計算・分析ツール</strong>であり、投資助言や銘柄推奨ではありません。</li>
+<li>株価データは前日終値ベースで、遅延・欠損があり得ます。<strong>発注前に必ず証券会社の画面で実際の株価・呼値を確認</strong>してください。</li>
+<li>逆指値・指値の呼値単位は一般銘柄の刻みで計算しています。銘柄によっては単位が異なることがあります（その場合は近い価格に読み替えてください）。</li>
+<li>投資の最終判断と結果責任はご自身に帰属します。余裕資金の範囲でご利用ください。</li>
+</ul>
+</div></body></html>
